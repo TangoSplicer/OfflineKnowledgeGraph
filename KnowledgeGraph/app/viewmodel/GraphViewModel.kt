@@ -12,9 +12,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 
-class GraphViewModel : ViewModel(), GraphServiceProvider {
-    override fun getLatestGraphJson(): String {
-        return latestGraphJson
+class GraphViewModel(private val context: Context) : ViewModel(), GraphServiceProvider {
+    lateinit var graphService: GraphService
+
+    override fun getGraphService(): GraphService {
+        return graphService
     }
 
     private val _graphState = MutableStateFlow(GraphState())
@@ -36,8 +38,9 @@ class GraphViewModel : ViewModel(), GraphServiceProvider {
     var latestGraphJson: String = ""
 
     init {
+        graphService = GraphService(UsageStatsManager(context))
         // Plugin metadata registry init
-        PluginRegistry.load(AppGlobals.context)
+        PluginRegistry.load(context)
     }
 
     fun setSelectedNodeId(id: String?) {
@@ -199,10 +202,12 @@ class GraphViewModel : ViewModel(), GraphServiceProvider {
     }
 
     fun createRelationship(sourceNodeId: String, targetNodeId: String, relationshipType: String) {
-        val newEdge = GraphEdge(source = sourceNodeId, target = targetNodeId, type = relationshipType)
-        val currentState = _graphState.value
-        val newEdges = currentState.edges + newEdge
-        val newState = currentState.copy(edges = newEdges)
-        _graphState.value = newState
+        graphService.addEdge(
+            com.knowledgegraph.app.model.GraphEdge(
+                source = sourceNodeId,
+                target = targetNodeId,
+                type = relationshipType
+            )
+        )
     }
 }

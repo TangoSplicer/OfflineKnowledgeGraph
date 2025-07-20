@@ -28,13 +28,3 @@
         (reset! interaction-log (edn/read-string (slurp file)))
         (catch Exception e
           (println "Failed to load log:" (.getMessage e)))))))
-
-(defn learn-from-corrections! [corrections]
-  (doseq [correction corrections]
-    (let [[_ original corrected] (re-matches #".*original: (.*), corrected: (.*)" correction)]
-      (when (and original corrected)
-        (swap! interaction-log
-               (fn [log]
-                 (-> log
-                     (update original (fnil dec 0))
-                     (update corrected (fnil inc 0)))))))))

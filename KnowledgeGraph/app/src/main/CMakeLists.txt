@@ -6,6 +6,7 @@ add_library(
     SHARED
     bridge_init.cpp
     interop.cpp
+    lisp_bridge.cpp
 )
 
 # Locate native logging library

@@ -6,8 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.knowledgegraph.app.ui.screens.MainScreen
 import com.knowledgegraph.app.ui.screens.NoteEditorScreen
-import com.knowledgegraph.app.ui.screens.ContradictionExplanationScreen
-import com.knowledgegraph.app.ui.screens.RelationshipEditorScreen
 import com.knowledgegraph.app.viewmodel.GraphViewModel
 import com.knowledgegraph.app.viewmodel.NoteViewModel
 import com.knowledgegraph.app.viewmodel.ReminderViewModel
@@ -41,11 +39,5 @@ fun AppNavHost(
         graphViewModel = graphViewModel
     )
 }
-        composable("relationship_editor") {
-            RelationshipEditorScreen(graphViewModel = graphViewModel)
-        }
-        composable("contradictions") {
-            ContradictionExplanationScreen(graphServiceProvider = graphViewModel)
-        }
     }
 }

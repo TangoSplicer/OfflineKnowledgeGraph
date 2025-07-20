@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter
 
 class UsageStatsManager(private val context: Context) {
     private val logFile = File(context.filesDir, "usage_log.txt")
-    private val correctionLogFile = File(context.filesDir, "correction_log.txt")
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     fun logEvent(event: String) {
@@ -29,16 +28,5 @@ class UsageStatsManager(private val context: Context) {
 
     fun clearLogs() {
         if (logFile.exists()) logFile.delete()
-    }
-
-    fun logCorrection(original: String, corrected: String) {
-        val timestamp = LocalDateTime.now().format(formatter)
-        val entry = "$timestamp - original: $original, corrected: $corrected\n"
-        correctionLogFile.appendText(entry)
-    }
-
-    fun getCorrectionLogs(): List<String> {
-        if (!correctionLogFile.exists()) return emptyList()
-        return correctionLogFile.readLines()
     }
 }

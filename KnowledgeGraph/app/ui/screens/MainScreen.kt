@@ -11,8 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
+import com.knowledgegraph.app.ui.components.RelationshipEditorDialog
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +46,7 @@ fun MainScreen(
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     val forgottenNodes by reminderViewModel.forgottenNodes.collectAsState()
+    var showRelationshipEditor by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -97,12 +98,16 @@ fun MainScreen(
             IconButton(onClick = { navController.navigate("notes") }) {
                 Icon(Icons.Filled.EditNote, contentDescription = "Open Notes")
             }
-            IconButton(onClick = { navController.navigate("relationship_editor") }) {
+            IconButton(onClick = { showRelationshipEditor = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Create Relationship")
             }
-            IconButton(onClick = { navController.navigate("contradictions") }) {
-                Icon(Icons.Default.Warning, contentDescription = "View Contradictions")
-            }
+        }
+
+        if (showRelationshipEditor) {
+            RelationshipEditorDialog(
+                graphViewModel = viewModel,
+                onDismiss = { showRelationshipEditor = false }
+            )
         }
 
         if (searchResults.isNotEmpty()) {

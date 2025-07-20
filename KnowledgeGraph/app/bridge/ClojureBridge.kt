@@ -6,7 +6,6 @@ external object ClojureBridge {
     @JvmStatic external fun getPluginSuggestions(payload: String): String
     @JvmStatic external fun togglePlugin(pluginId: String): String
     @JvmStatic external fun searchGraph(payload: String): String
-    @JvmStatic external fun setPluginAPI(pluginAPI: Any)
 
     fun safeUpdateGraph(payload: String): String = try {
         updateGraph(payload)

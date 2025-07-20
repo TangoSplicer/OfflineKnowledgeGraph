@@ -6,13 +6,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.knowledgegraph.app.services.GraphServiceProvider
+import com.knowledgegraph.app.viewmodel.GraphViewModel
 import services.ContradictionService
-import com.knowledgegraph.app.model.ContradictionExplanation
+import model.ContradictionExplanation
 
 @Composable
-fun ContradictionExplanationScreen(graphServiceProvider: GraphServiceProvider) {
-    val contradictionService = ContradictionService(graphServiceProvider)
+fun ContradictionExplanationScreen(graphViewModel: GraphViewModel) {
+    val contradictionService = ContradictionService(graphViewModel.graphService)
     val explanations by remember { mutableStateOf(contradictionService.getContradictions()) }
 
     Scaffold(
@@ -28,14 +28,16 @@ fun ContradictionExplanationScreen(graphServiceProvider: GraphServiceProvider) {
         ) {
             items(explanations.size) { index ->
                 val item = explanations[index]
-                ContradictionCard(item)
+                ContradictionCard(item) { explanation, resolution ->
+                    contradictionService.resolveContradiction(explanation, resolution)
+                }
             }
         }
     }
 }
 
 @Composable
-fun ContradictionCard(item: ContradictionExplanation) {
+fun ContradictionCard(item: ContradictionExplanation, onResolve: (ContradictionExplanation, String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -48,6 +50,16 @@ fun ContradictionCard(item: ContradictionExplanation) {
             Text("Cause: ${item.cause}", style = MaterialTheme.typography.bodySmall)
             Spacer(modifier = Modifier.height(4.dp))
             Text("Resolution Suggestion: ${item.resolutionHint}", style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row {
+                Button(onClick = { onResolve(item, "A") }) {
+                    Text("Choose A")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { onResolve(item, "B") }) {
+                    Text("Choose B")
+                }
+            }
         }
     }
 }
