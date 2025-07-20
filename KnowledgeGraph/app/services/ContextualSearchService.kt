@@ -2,12 +2,22 @@ package com.knowledgegraph.services
 
 import com.knowledgegraph.model.GraphNode
 import com.knowledgegraph.model.GraphEdge
+import edu.stanford.nlp.pipeline.StanfordCoreNLP
+import java.util.*
 
 /**
  * Service for performing contextual search and pattern-based graph traversal.
  * Uses edge types, node metadata, and local tags to build context-aware queries.
  */
 class ContextualSearchService(private val graphService: GraphService) {
+
+    private val pipeline: StanfordCoreNLP
+
+    init {
+        val props = Properties()
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,depparse")
+        pipeline = StanfordCoreNLP(props)
+    }
 
     /**
      * Search nodes by approximate label with optional context tags.
@@ -64,5 +74,20 @@ class ContextualSearchService(private val graphService: GraphService) {
 
         dfs(nodeId, emptyList())
         return results
+    }
+
+    fun semanticSearch(query: String): List<GraphNode> {
+        val document = pipeline.process(query)
+        val entities = document.sentences().flatMap { it.mentions() }
+        val matchingNodes = entities.mapNotNull { entity ->
+            graphService.getAllNodes().find { node ->
+                node.label.equals(entity.text(), ignoreCase = true)
+            }
+        }
+        // TODO: Implement relationship extraction and graph traversal
+        document.sentences().forEach { sentence ->
+            println(sentence.dependencyParse())
+        }
+        return matchingNodes
     }
 }
