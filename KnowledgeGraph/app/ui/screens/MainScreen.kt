@@ -8,8 +8,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -94,6 +96,12 @@ fun MainScreen(
             }
             IconButton(onClick = { navController.navigate("notes") }) {
                 Icon(Icons.Filled.EditNote, contentDescription = "Open Notes")
+            }
+            IconButton(onClick = { navController.navigate("relationship_editor") }) {
+                Icon(Icons.Default.Add, contentDescription = "Create Relationship")
+            }
+            IconButton(onClick = { navController.navigate("contradictions") }) {
+                Icon(Icons.Default.Warning, contentDescription = "View Contradictions")
             }
         }
 
