@@ -6,11 +6,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.knowledgegraph.app.services.GraphServiceProvider
 import services.ContradictionService
-import model.ContradictionExplanation
+import com.knowledgegraph.app.model.ContradictionExplanation
 
 @Composable
-fun ContradictionExplanationScreen(contradictionService: ContradictionService = ContradictionService()) {
+fun ContradictionExplanationScreen(graphServiceProvider: GraphServiceProvider) {
+    val contradictionService = ContradictionService(graphServiceProvider)
     val explanations by remember { mutableStateOf(contradictionService.getContradictions()) }
 
     Scaffold(
