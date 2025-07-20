@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.knowledgegraph.app.bridge.ClojureBridge
 import com.knowledgegraph.app.model.*
+import com.knowledgegraph.app.services.GraphServiceProvider
 import com.knowledgegraph.app.services.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +12,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 
-class GraphViewModel : ViewModel() {
+class GraphViewModel(private val context: Context) : ViewModel(), GraphServiceProvider {
+    lateinit var graphService: GraphService
+
+    override fun getGraphService(): GraphService {
+        return graphService
+    }
+
     private val _graphState = MutableStateFlow(GraphState())
     val graphState = _graphState.asStateFlow()
 
@@ -31,8 +38,9 @@ class GraphViewModel : ViewModel() {
     var latestGraphJson: String = ""
 
     init {
+        graphService = GraphService(UsageStatsManager(context))
         // Plugin metadata registry init
-        PluginRegistry.load(AppGlobals.context)
+        PluginRegistry.load(context)
     }
 
     fun setSelectedNodeId(id: String?) {
@@ -191,5 +199,15 @@ class GraphViewModel : ViewModel() {
 
     fun logInteractionEvent(context: Context, label: String) {
         UsageStatsManager(context).logEvent("Graph: $label")
+    }
+
+    fun createRelationship(sourceNodeId: String, targetNodeId: String, relationshipType: String) {
+        graphService.addEdge(
+            com.knowledgegraph.app.model.GraphEdge(
+                source = sourceNodeId,
+                target = targetNodeId,
+                type = relationshipType
+            )
+        )
     }
 }

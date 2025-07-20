@@ -20,6 +20,24 @@ class ContradictionService(private val graphService: GraphService) {
     }
 
     fun resolveContradiction(explanation: ContradictionExplanation, resolution: String) {
-        println("Resolving contradiction: ${explanation.conflictingFact} with resolution $resolution")
+        val conflictingNodes = graphService.getAllNodes().filter {
+            it.label == explanation.conflictingFact || it.label == explanation.cause
+        }
+
+        if (conflictingNodes.size == 2) {
+            val nodeA = conflictingNodes[0]
+            val nodeB = conflictingNodes[1]
+            val correctNode = if (resolution == "A") nodeA else nodeB
+            val incorrectNode = if (resolution == "A") nodeB else nodeA
+
+            graphService.addEdge(
+                com.knowledgegraph.app.model.GraphEdge(
+                    source = correctNode.id,
+                    target = incorrectNode.id,
+                    type = "resolved_contradiction",
+                    properties = mapOf("correct_node" to correctNode.id)
+                )
+            )
+        }
     }
 }
