@@ -11,7 +11,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 
-class GraphService {
+class GraphService(private val usageStatsManager: UsageStatsManager) {
 
     private val _graphState = MutableStateFlow(GraphState())
     val graphState: StateFlow<GraphState> = _graphState
@@ -21,12 +21,15 @@ class GraphService {
 
     fun updateGraphFromText(noteInput: String) {
         val graphJson = latestGraphJson
+        val corrections = usageStatsManager.getCorrectionLogs()
 
         val payload = buildString {
             append("{:graph ")
             append("\"${graphJson.replace("\"", "\\\"")}\"")
             append(", :text ")
             append("\"${noteInput.replace("\"", "\\\"")}\"")
+            append(", :corrections ")
+            append(Json.encodeToString(corrections))
             append("}")
         }
 
@@ -45,5 +48,31 @@ class GraphService {
         } catch (e: Exception) {
             Log.e("GraphService", "Failed to parse updated graph", e)
         }
+    }
+
+    fun addNode(node: GraphNode) {
+        val currentState = _graphState.value
+        val newNodes = currentState.nodes + node
+        val newState = currentState.copy(nodes = newNodes)
+        _graphState.value = newState
+    }
+
+    fun addEdge(edge: GraphEdge) {
+        val currentState = _graphState.value
+        val newEdges = currentState.edges + edge
+        val newState = currentState.copy(edges = newEdges)
+        _graphState.value = newState
+    }
+
+    fun getAllNodes(): List<GraphNode> {
+        return _graphState.value.nodes
+    }
+
+    fun getEdgesForNode(nodeId: String): List<GraphEdge> {
+        return _graphState.value.edges.filter { it.source == nodeId || it.target == nodeId }
+    }
+
+    fun getNodeById(nodeId: String): GraphNode? {
+        return _graphState.value.nodes.find { it.id == nodeId }
     }
 }

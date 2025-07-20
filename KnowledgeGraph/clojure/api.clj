@@ -11,9 +11,11 @@
 (defonce ^:private _start-watcher (watcher/start-watcher!))
 
 (defn update-graph-from-json [input-edn]
-  (let [{:keys [graph text interacted]} (edn/read-string input-edn)]
+  (let [{:keys [graph text interacted corrections]} (edn/read-string input-edn)]
     (when interacted
       (learn/register-interactions! interacted))
+    (when corrections
+      (learn/learn-from-corrections! corrections))
     (m/update-graph graph text e/default-extractor)))
 
 (defn get-plugin-suggestions [input-edn]
