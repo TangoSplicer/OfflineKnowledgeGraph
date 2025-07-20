@@ -17,3 +17,27 @@
       (if (= exit 0)
         (json/parse-string out true)
         {:error err}))))
+
+(defn run-lisp-inference-with-corrections [facts corrections]
+  (let [input-json (json/generate-string {:action "infer" :facts facts :corrections corrections})
+        wrapped `(progn
+                    (load "lisp_reasoning/plugin.lisp")
+                    (format t "~a" (princ-to-string
+                                     ,(read-from-string
+                                       (format plugin-entry input-json)))))
+        command ["sbcl" "--eval" (str wrapped)]]
+    (let [{:keys [out err exit]} (apply sh command)]
+      (if (= exit 0)
+        (json/parse-string out true)
+        {:error err}))))
+
+(defn evaluate-lisp-rule [rule]
+  (let [wrapped `(progn
+                    (load "lisp_reasoning/plugin.lisp")
+                    (format t "~a" (princ-to-string
+                                     (lisp-reasoning.plugin:evaluate-rule ,rule))))
+        command ["sbcl" "--eval" (str wrapped)]]
+    (let [{:keys [out err exit]} (apply sh command)]
+      (if (= exit 0)
+        (json/parse-string out true)
+        {:error err}))))
