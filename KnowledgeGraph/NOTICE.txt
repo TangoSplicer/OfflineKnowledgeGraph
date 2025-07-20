@@ -1,0 +1,2 @@
+// project_root/NOTICE.txt
+This software includes code written in Kotlin, Clojure, Common Lisp, and Mercury.

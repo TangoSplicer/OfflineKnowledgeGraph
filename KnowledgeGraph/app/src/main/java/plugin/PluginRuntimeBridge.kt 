@@ -1,0 +1,30 @@
+package plugin
+
+import model.PluginModel
+import java.io.File
+
+object PluginRuntimeBridge {
+
+    private const val sandboxInputPath = "sandbox/plugin_input.json"
+    private const val sandboxOutputPath = "sandbox/plugin_output.json"
+
+    fun execute(plugin: PluginModel): String {
+        try {
+            // Prepare sandbox input
+            val inputFile = File(sandboxInputPath)
+            inputFile.writeText("{ \"entry\": \"${plugin.entryPoint}\" }")
+
+            // Signal external system (Clojure or Mercury) to run the plugin
+            // In actual deployment, this would trigger a native execution bridge
+
+            // Wait for simulated result (in production: poll/wait for completion)
+            val outputFile = File(sandboxOutputPath)
+            if (outputFile.exists()) {
+                return outputFile.readText()
+            }
+            return "Plugin execution initiated, no output found yet."
+        } catch (e: Exception) {
+            return "Plugin execution failed: ${e.message}"
+        }
+    }
+}

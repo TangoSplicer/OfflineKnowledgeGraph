@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.22.1)
+project("knowledgegraph")
+
+add_library(
+    native-lib
+    SHARED
+    bridge_init.cpp
+    interop.cpp
+)
+
+# Locate native logging library
+find_library(
+    log-lib
+    log
+)
+
+# Link JNI + logging
+target_link_libraries(
+    native-lib
+    ${log-lib}
+)

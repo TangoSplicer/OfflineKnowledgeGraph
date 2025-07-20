@@ -1,0 +1,4 @@
+<!-- android/res/values/strings.xml -->
+<resources>
+    <string name="app_name">KnowledgeGraph</string>
+</resources>

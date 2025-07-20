@@ -1,0 +1,10 @@
+;; clojure_core/example_rules.edn
+[
+ {:id "infer-person"
+  :when (fn [g] (some #(= (:type %) "human") (:nodes g)))
+  :then (fn [g] (update g :nodes conj {:id "derived1" :type "person"}))}
+
+ {:id "link-concepts"
+  :when (fn [g] (some #(= (:label %) "Knowledge") (:nodes g)))
+  :then (fn [g] (update g :edges conj {:fromId "derived1" :toId "n1" :type "related"}))}
+]

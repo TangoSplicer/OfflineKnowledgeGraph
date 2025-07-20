@@ -1,0 +1,6 @@
+// project_root/config/engine.json
+{
+  "version": "1.0.0",
+  "modules": ["kotlin", "clojure", "lisp", "mercury"],
+  "offline_mode": true
+}

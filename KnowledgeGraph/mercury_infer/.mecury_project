@@ -1,0 +1,18 @@
+% mercury_infer/.mercury_project
+
+% Project config for Mercury build
+% Define modules to compile
+% Usage: mmc --make cli
+
+modules:
+    types
+    factbase
+    unify
+    ruleset
+    reasoner
+    consistency
+    temporal
+    scorer
+    debug
+    cli
+    driver

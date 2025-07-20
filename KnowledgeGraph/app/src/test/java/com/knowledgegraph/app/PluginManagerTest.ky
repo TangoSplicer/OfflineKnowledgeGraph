@@ -1,0 +1,24 @@
+package com.knowledgegraph.app
+
+import com.knowledgegraph.app.services.PluginManager
+import org.junit.Assert.*
+import org.junit.Test
+import java.io.File
+
+class PluginManagerTest {
+
+    @Test
+    fun testPluginDirectoryAccessible() {
+        val files = PluginManager.getPluginFiles()
+        assertNotNull(files)
+    }
+
+    @Test
+    fun testPluginReadDoesNotCrash() {
+        val plugins = PluginManager.getPluginFiles()
+        if (plugins.isNotEmpty()) {
+            val content = PluginManager.readPlugin(plugins[0])
+            assertTrue(content.isNotBlank())
+        }
+    }
+}

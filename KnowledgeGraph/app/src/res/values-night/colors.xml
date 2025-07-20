@@ -1,0 +1,4 @@
+<!-- android/res/values-night/colors.xml -->
+<resources>
+    <color name="primary_dark">#90CAF9</color>
+</resources>

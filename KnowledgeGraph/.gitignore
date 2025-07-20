@@ -1,0 +1,16 @@
+// project_root/.gitignore
+# Android
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build/
+/captures/
+
+# Logs
+*.log
+
+# JNI build artifacts
+*.so
+*.a
+obj/
