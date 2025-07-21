@@ -5,6 +5,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,40 +17,47 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.knowledgegraph.app.services.FileImportManager
 import com.knowledgegraph.app.viewmodel.GraphViewModel
+import com.knowledgegraph.app.viewmodel.ImportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImportScreen(graphViewModel: GraphViewModel) {
+fun NoteImportScreen(
+    importViewModel: ImportViewModel,
+    graphViewModel: GraphViewModel
+) {
     val context = LocalContext.current
-    var fileContent by remember { mutableStateOf<String?>(null) }
-    var fileName by remember { mutableStateOf<String?>(null) }
+    val importedNote by importViewModel.importedNote.collectAsState()
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            fileName = FileImportManager.getFileName(context, it)
-            fileContent = when {
-                fileName?.endsWith(".md") == true -> FileImportManager.readMarkdown(context, it)
-                fileName?.endsWith(".pdf") == true -> FileImportManager.readPDF(context, it)
-                else -> "Unsupported file type"
-            }
+    val filePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri: Uri? ->
+            uri?.let { importViewModel.importFile(context, it) }
         }
-    }
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Import File") },
+                title = { Text("Import Note") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.primary
                 )
             )
+        },
+        floatingActionButton = {
+            if (importedNote != null) {
+                FloatingActionButton(onClick = {
+                    val note = importedNote!!
+                    graphViewModel.submitVoiceInput(note.content)
+                    importViewModel.clear()
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Note")
+                }
+            }
         }
-    ) { innerPadding ->
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -58,7 +69,7 @@ fun ImportScreen(graphViewModel: GraphViewModel) {
                         )
                     )
                 )
-                .padding(innerPadding)
+                .padding(padding)
         ) {
             Column(
                 modifier = Modifier
@@ -66,44 +77,30 @@ fun ImportScreen(graphViewModel: GraphViewModel) {
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(onClick = { launcher.launch("*/*") }) {
-                    Text("Choose File")
+                Button(onClick = { filePicker.launch(arrayOf("application/pdf", "text/plain", "text/markdown")) }) {
+                    Text("Select File")
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                fileContent?.let {
+                importedNote?.let { note ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
+                            Text("File: ${note.title}", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "File: ${fileName ?: "Unnamed"}",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            OutlinedTextField(
-                                value = it.take(1000),
-                                onValueChange = {},
+                                note.content.take(2000),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp),
-                                label = { Text("Preview (truncated)") },
-                                readOnly = true
+                                    .verticalScroll(rememberScrollState()),
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = {
-                            graphViewModel.updateGraphFromText(it)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Import to Knowledge Graph")
-                    }
-                }
+                } ?: Text("No file selected", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

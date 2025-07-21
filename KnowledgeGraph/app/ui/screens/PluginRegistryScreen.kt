@@ -1,15 +1,21 @@
 package com.knowledgegraph.app.ui.screens
 
-import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.knowledgegraph.app.services.PluginManager
 import com.knowledgegraph.app.model.PluginMetadata
+import com.knowledgegraph.app.services.PluginManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PluginRegistryScreen() {
     val context = LocalContext.current
@@ -22,47 +28,77 @@ fun PluginRegistryScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Plugin Registry") })
+            TopAppBar(
+                title = { Text("Plugin Registry") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                )
+            )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                        )
+                    )
+                )
                 .padding(innerPadding)
-                .padding(16.dp)
         ) {
-            plugins.forEach { plugin ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+            if (plugins.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(plugin.name, style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(4.dp))
-                        Text(plugin.description, style = MaterialTheme.typography.bodyMedium)
-                        Spacer(Modifier.height(8.dp))
-                        Text("Author: ${plugin.author}", style = MaterialTheme.typography.labelSmall)
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Enabled")
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Switch(
-                                checked = plugin.enabled,
-                                onCheckedChange = {
-                                    PluginManager.togglePlugin(context, plugin.id, it)
-                                    plugins = PluginManager.listPlugins(context)
-                                }
-                            )
+                    Text("No plugins installed.", style = MaterialTheme.typography.bodyLarge)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    items(plugins) { plugin ->
+                        PluginRegistryCard(plugin) {
+                            PluginManager.togglePlugin(context, plugin.id, it)
+                            plugins = PluginManager.listPlugins(context)
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
             }
+        }
+    }
+}
 
-            if (plugins.isEmpty()) {
-                Spacer(Modifier.height(24.dp))
-                Text("No plugins installed.", style = MaterialTheme.typography.bodySmall)
+@Composable
+fun PluginRegistryCard(plugin: PluginMetadata, onToggle: (Boolean) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(plugin.name, style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(plugin.description, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("Author: ${plugin.author}", style = MaterialTheme.typography.labelSmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Enabled")
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = plugin.enabled,
+                    onCheckedChange = onToggle
+                )
             }
         }
     }
