@@ -1,13 +1,13 @@
 (defpackage :reasoning.core
-  (:use :cl))
+  (:use :cl)
+  (:export :fact-base :make-fact-base :add-fact :all-facts))
 (in-package :reasoning.core)
 
-(defparameter *facts* '())
+(defstruct fact-base
+  (facts '() :type list))
 
-(defun reset-facts () (setf *facts* '()))
+(defun add-fact (fact-base fact)
+  (push fact (fact-base-facts fact-base)))
 
-(defun add-fact (fact)
-  (push fact *facts*))
-
-(defun all-facts ()
-  *facts*)
+(defun all-facts (fact-base)
+  (fact-base-facts fact-base))
