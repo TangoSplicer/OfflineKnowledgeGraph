@@ -10,7 +10,7 @@ external object ClojureBridge {
     fun safeUpdateGraph(payload: String): String = try {
         updateGraph(payload)
     } catch (e: UnsatisfiedLinkError) {
-        "{\"error\":\"Bridge error\"}"
+        "{\"error\":\"Clojure bridge not available. Please check the installation.\"}"
     }
 
     fun safeGetPluginSuggestions(payload: String): String = try {
