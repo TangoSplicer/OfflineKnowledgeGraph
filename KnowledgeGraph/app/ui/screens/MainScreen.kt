@@ -105,10 +105,15 @@ fun MainScreen(
                         }
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    var isSearching by remember { mutableStateOf(false) }
+
                     IconButton(onClick = {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val resultJson = com.knowledgegraph.app.bridge.ClojureBridge
-                                .safeSearchGraph(searchQuery, viewModel.latestGraphJson)
+                        isSearching = true
+                        coroutineScope.launch {
+                            val resultJson = withContext(Dispatchers.IO) {
+                                com.knowledgegraph.app.bridge.ClojureBridge
+                                    .safeSearchGraph(searchQuery, viewModel.latestGraphJson)
+                            }
                             try {
                                 val parsed = JSONArray(resultJson)
                                 val results = mutableListOf<Pair<String, String>>()
@@ -120,10 +125,16 @@ fun MainScreen(
                             } catch (e: Exception) {
                                 searchResults = emptyList()
                                 Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isSearching = false
                             }
                         }
                     }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        if (isSearching) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        } else {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
                     }
                     VoiceInputButton { spokenText ->
                         searchQuery = spokenText

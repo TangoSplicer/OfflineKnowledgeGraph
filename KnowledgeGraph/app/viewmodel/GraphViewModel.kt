@@ -51,30 +51,37 @@ class GraphViewModel(private val context: Context) : ViewModel(), GraphServicePr
         _showEdgeWeights.value = !_showEdgeWeights.value
     }
 
+    private val _errorState = MutableStateFlow<String?>(null)
+    val errorState = _errorState.asStateFlow()
+
     fun updateGraphFromText(text: String) {
-        val payload = mapOf(
-            "graph" to latestGraphJson,
-            "text" to text,
-            "interacted" to interactionLog.value.distinct()
-        )
-        val payloadJson = Gson().toJson(payload)
-
-        val result = ClojureBridge.safeUpdateGraph(payloadJson)
-        latestGraphJson = result
-        try {
-            val parsed = GraphState.fromJson(JSONObject(result))
-            _graphState.value = parsed
-            _graphFullState.value = parsed
-
-            parsed.nodes.filter { it.label.contains("contradiction", true) }.forEach { node ->
-                GraphAnnotationManager.addAnnotation(
-                    nodeId = node.id,
-                    message = "Contradiction detected: ${node.label}",
-                    type = AnnotationType.CONTRADICTION
+        viewModelScope.launch {
+            try {
+                val payload = mapOf(
+                    "graph" to latestGraphJson,
+                    "text" to text,
+                    "interacted" to interactionLog.value.distinct()
                 )
+                val payloadJson = Gson().toJson(payload)
+
+                val result = withContext(Dispatchers.IO) {
+                    ClojureBridge.safeUpdateGraph(payloadJson)
+                }
+                latestGraphJson = result
+                val parsed = GraphState.fromJson(JSONObject(result))
+                _graphState.value = parsed
+                _graphFullState.value = parsed
+
+                parsed.nodes.filter { it.label.contains("contradiction", true) }.forEach { node ->
+                    GraphAnnotationManager.addAnnotation(
+                        nodeId = node.id,
+                        message = "Contradiction detected: ${node.label}",
+                        type = AnnotationType.CONTRADICTION
+                    )
+                }
+            } catch (e: Exception) {
+                _errorState.value = "Failed to update graph: ${e.message}"
             }
-        } catch (e: JSONException) {
-            _uiState.value = GraphUiState.Error("Failed to parse graph data: ${e.message}")
         }
     }
 
