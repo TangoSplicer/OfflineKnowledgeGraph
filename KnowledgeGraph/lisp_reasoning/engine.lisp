@@ -1,16 +1,17 @@
 (defpackage :lisp-reasoning.engine
-  (:use :cl :lisp-reasoning.rules :reasoning.graph.hooks)
-  (:export :run-inference :infer-new-facts))
+  (:use :cl :lisp-reasoning.rules :reasoning.core :reasoning.graph.hooks)
+  (:export :inference-engine :make-inference-engine :run-inference))
 
 (in-package :lisp-reasoning.engine)
 
-(defun infer-new-facts (existing-facts)
-  (apply-rules existing-facts))
+(defstruct inference-engine
+  (rule-set (make-rule-set) :type rule-set))
 
-(defun run-inference (fact-list)
+(defun run-inference (engine fact-base)
   "Main reasoning loop: deduce additional facts from the given base facts."
-  (let ((deduced (infer-new-facts fact-list))
-        (all-facts (remove-duplicates (append fact-list deduced)
+  (let* ((facts (all-facts fact-base))
+         (deduced (apply-rules (inference-engine-rule-set engine) facts))
+         (all-facts (remove-duplicates (append facts deduced)
                                       :test #'equal)))
     (run-hooks all-facts)
     all-facts))
