@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import com.knowledgegraph.app.ui.components.RelationshipEditorDialog
@@ -24,6 +25,7 @@ import androidx.navigation.NavController
 import com.knowledgegraph.app.model.GraphNode
 import com.knowledgegraph.app.ui.components.GraphCanvas
 import com.knowledgegraph.app.ui.components.ReminderCard
+import com.knowledgegraph.app.services.VoiceInputManager
 import com.knowledgegraph.app.viewmodel.GraphViewModel
 import com.knowledgegraph.app.viewmodel.ExportViewModel
 import com.knowledgegraph.app.viewmodel.ReminderViewModel
@@ -123,6 +125,9 @@ fun MainScreen(
                     }) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
+                    VoiceInputButton { spokenText ->
+                        searchQuery = spokenText
+                    }
                 }
 
                 if (showRelationshipEditor) {
@@ -178,5 +183,27 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun VoiceInputButton(onResult: (String) -> Unit) {
+    val context = LocalContext.current
+    val voiceInputManager = remember {
+        VoiceInputManager(
+            context = context,
+            onResult = { result -> onResult(result) },
+            onError = { error -> Toast.makeText(context, error, Toast.LENGTH_SHORT).show() }
+        )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            voiceInputManager.destroy()
+        }
+    }
+
+    IconButton(onClick = { voiceInputManager.startListening() }) {
+        Icon(Icons.Default.Mic, contentDescription = "Voice Search")
     }
 }
