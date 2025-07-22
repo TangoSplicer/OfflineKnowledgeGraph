@@ -52,28 +52,29 @@ class GraphViewModel(private val context: Context) : ViewModel(), GraphServicePr
     }
 
     fun updateGraphFromText(text: String) {
-        val payload = buildString {
-            append("{:graph ")
-            append("\"${latestGraphJson.replace("\"", "\\\"")}\"")
-            append(", :text ")
-            append("\"${text.replace("\"", "\\\"")}\"")
-            append(", :interacted ")
-            append(interactionLog.value.distinct().joinToString(prefix = "[\"", separator = "\", \"", postfix = "\"]"))
-            append("}")
-        }
+        val payload = mapOf(
+            "graph" to latestGraphJson,
+            "text" to text,
+            "interacted" to interactionLog.value.distinct()
+        )
+        val payloadJson = Gson().toJson(payload)
 
-        val result = ClojureBridge.safeUpdateGraph(payload)
+        val result = ClojureBridge.safeUpdateGraph(payloadJson)
         latestGraphJson = result
-        val parsed = GraphState.fromJson(JSONObject(result))
-        _graphState.value = parsed
-        _graphFullState.value = parsed
+        try {
+            val parsed = GraphState.fromJson(JSONObject(result))
+            _graphState.value = parsed
+            _graphFullState.value = parsed
 
-        parsed.nodes.filter { it.label.contains("contradiction", true) }.forEach { node ->
-            GraphAnnotationManager.addAnnotation(
-                nodeId = node.id,
-                message = "Contradiction detected: ${node.label}",
-                type = AnnotationType.CONTRADICTION
-            )
+            parsed.nodes.filter { it.label.contains("contradiction", true) }.forEach { node ->
+                GraphAnnotationManager.addAnnotation(
+                    nodeId = node.id,
+                    message = "Contradiction detected: ${node.label}",
+                    type = AnnotationType.CONTRADICTION
+                )
+            }
+        } catch (e: JSONException) {
+            _uiState.value = GraphUiState.Error("Failed to parse graph data: ${e.message}")
         }
     }
 
@@ -138,34 +139,28 @@ class GraphViewModel(private val context: Context) : ViewModel(), GraphServicePr
 
     fun executePluginActions(): List<String> {
         val graphJson = latestGraphJson
-        val interactions = interactionLog.value.distinct().joinToString(
-            prefix = "[\"", separator = "\", \"", postfix = "\"]"
+        val interactions = interactionLog.value.distinct()
+        val payload = mapOf(
+            "graph" to graphJson,
+            "interacted" to interactions
         )
-        val payload = """{:graph "${graphJson.replace("\"", "\\\"")}", :interacted $interactions}"""
-        val result = ClojureBridge.safeGetPluginSuggestions(payload)
+        val payloadJson = Gson().toJson(payload)
+        val result = ClojureBridge.safeGetPluginSuggestions(payloadJson)
 
         return try {
-            val jsonArray = JSONArray(result)
+            val json = Json { ignoreUnknownKeys = true }
+            val suggestions = json.decodeFromString<List<PluginSuggestion>>(result)
             val newGraph = JSONObject(latestGraphJson)
 
-            for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                val resultObj = obj.optJSONObject("result")
-                if (resultObj != null && resultObj.has("action")) {
-                    val action = resultObj.optString("action")
-                    val nodeId = resultObj.optString("node-id")
-                    if (action == "tag") {
-                        val tags = resultObj.optJSONArray("tags")
+            suggestions.forEach { suggestion ->
+                suggestion.result?.let { result ->
+                    if (result.action == "tag") {
                         val nodeArr = newGraph.getJSONArray("nodes")
                         for (j in 0 until nodeArr.length()) {
                             val node = nodeArr.getJSONObject(j)
-                            if (node.optString("id") == nodeId) {
+                            if (node.optString("id") == result.nodeId) {
                                 val meta = node.optJSONObject("meta") ?: JSONObject()
-                                val tagList = mutableListOf<String>()
-                                for (k in 0 until tags.length()) {
-                                    tagList.add(tags.getString(k))
-                                }
-                                meta.put("tags", tagList)
+                                meta.put("tags", result.tags)
                                 node.put("meta", meta)
                             }
                         }
@@ -177,7 +172,7 @@ class GraphViewModel(private val context: Context) : ViewModel(), GraphServicePr
             _graphState.value = GraphState.fromJson(newGraph)
             listOf("Actions applied successfully.")
         } catch (e: Exception) {
-            listOf("Failed to apply plugin actions.")
+            listOf("Failed to apply plugin actions: ${e.message}")
         }
     }
 
