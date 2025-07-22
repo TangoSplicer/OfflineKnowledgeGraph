@@ -31,3 +31,13 @@
   (let [{:keys [graph query]} (edn/read-string input-edn)
         state (g/json->graph graph)]
     (search/semantic-search state query)))
+
+(defn toggle-plugin! [plugin-id]
+  (let [sym-id (keyword plugin-id)]
+    (plugins/toggle-plugin! sym-id)
+    (str "Toggled plugin: " plugin-id)))
+
+(defn run-semantic-search [input-edn]
+  (let [{:keys [graph query]} (edn/read-string input-edn)
+        state (g/json->graph graph)]
+    (search/semantic-search state query)))
