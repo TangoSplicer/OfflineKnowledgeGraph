@@ -1,34 +1,32 @@
 (ns knowledge.search-engine
   (:require [clojure.string :as str]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [graph.core :as graph]))
 
 (defn- normalize [s]
   (-> s str/lower-case str/trim))
 
-(defn- keyword-match? [query label]
-  (let [q (normalize query)
-        l (normalize label)]
-    (or (.contains l q)
-        (.contains q l))))
+(defn- tf [term doc]
+  (count (filter #(= term %) (str/split doc #"\s+"))))
 
-(defn- tag-match? [query tags]
-  (some #(keyword-match? query %) tags))
+(defn- idf [term docs]
+  (Math/log (/ (count docs)
+               (inc (count (filter #(contains? (set (str/split % #"\s+")) term) docs))))))
 
-(defn- attribute-match? [query meta]
-  (some #(keyword-match? query (str %)) (vals meta)))
+(defn- tf-idf [term doc docs]
+  (* (tf term doc) (idf term docs)))
 
-(defn- matches-node? [query node]
-  (or (keyword-match? query (:label node))
-      (attribute-match? query (:meta node))
-      (tag-match? query (get-in node [:meta :tags] []))))
+(defn- score-node [query node docs]
+  (let [q-terms (-> query normalize (str/split #"\s+"))
+        node-text (str (:label node) " " (pr-str (:properties node)))]
+    (reduce + (map #(tf-idf % node-text docs) q-terms))))
 
-(defn semantic-search [graph query]
-  (let [qwords (-> query normalize (str/split #"\s+"))
-        nodes (:nodes graph)
+(defn semantic-search [query]
+  (let [nodes (graph/all-nodes)
+        docs (map #(str (:label %) " " (pr-str (:properties %))) nodes)
         matches
-        (for [node nodes
-              :when (some #(matches-node? % node) qwords)]
+        (for [node nodes]
           {:id (:id node)
            :label (:label node)
-           :score (count (filter #(matches-node? % node) qwords))})]
-    (sort-by :score > matches)))
+           :score (score-node query node docs)})]
+    (sort-by :score > (filter #(> (:score %) 0) matches))))
