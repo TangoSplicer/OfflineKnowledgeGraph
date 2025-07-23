@@ -72,19 +72,12 @@ fun MainScreen(
             }
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-                        )
-                    )
-                )
                 .padding(paddingValues)
         ) {
+
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier
@@ -127,8 +120,43 @@ fun MainScreen(
                                 Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
                             } finally {
                                 isSearching = false
+
+            // Search bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search your knowledge...") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Search Icon")
+                    }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val resultJson = com.knowledgegraph.app.bridge.ClojureBridge
+                            .safeSearchGraph(searchQuery, viewModel.latestGraphJson)
+                        try {
+                            val parsed = JSONArray(resultJson)
+                            val results = mutableListOf<Pair<String, String>>()
+                            for (i in 0 until parsed.length()) {
+                                val obj = parsed.getJSONObject(i)
+                                results.add(obj.optString("id") to obj.optString("label"))
+
                             }
+                            searchResults = results
+                        } catch (e: Exception) {
+                            searchResults = emptyList()
+                            Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
                         }
+
                     }) {
                         if (isSearching) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -139,58 +167,69 @@ fun MainScreen(
                     VoiceInputButton { spokenText ->
                         searchQuery = spokenText
                     }
+                }) {
+                    Icon(Icons.Default.Search, contentDescription = "Search")
                 }
-
-                if (showRelationshipEditor) {
-                    RelationshipEditorDialog(
-                        graphViewModel = viewModel,
-                        onDismiss = { showRelationshipEditor = false }
-                    )
+                VoiceInputButton { spokenText ->
+                    searchQuery = spokenText
                 }
+            }
 
-                if (searchResults.isNotEmpty()) {
+            if (showRelationshipEditor) {
+                RelationshipEditorDialog(
+                    graphViewModel = viewModel,
+                    onDismiss = { showRelationshipEditor = false }
+                )
+            }
+
+            // Graph view
+            Box(modifier = Modifier.weight(1f)) {
+                GraphCanvas(
+                    graph = graphState,
+                    selectedNodeId = selectedNodeId,
+                    showEdgeWeights = showWeights,
+                    onNodeTap = { id -> viewModel.setSelectedNodeId(id) }
+                )
+            }
+
+            // Bottom sheet for search results and forgotten knowledge
+            if (searchResults.isNotEmpty() || forgottenNodes.isNotEmpty()) {
+                ModalBottomSheet(
+                    onDismissRequest = { /* Handle dismiss */ },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp)
                     ) {
-                        Text("Results:", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        searchResults.forEach { (id, label) ->
-                            TextButton(onClick = {
-                                viewModel.setSelectedNodeId(id)
-                                Toast.makeText(context, "Selected: $label", Toast.LENGTH_SHORT).show()
-                            }) {
-                                Text(label)
+                        if (searchResults.isNotEmpty()) {
+                            Text("Search Results", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LazyColumn {
+                                items(searchResults) { (id, label) ->
+                                    TextButton(onClick = {
+                                        viewModel.setSelectedNodeId(id)
+                                        Toast.makeText(context, "Selected: $label", Toast.LENGTH_SHORT).show()
+                                    }) {
+                                        Text(label)
+                                    }
+                                }
+                            }
+                        }
+
+                        if (forgottenNodes.isNotEmpty()) {
+                            Text("Forgotten Knowledge", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LazyColumn {
+                                items(forgottenNodes) { node ->
+                                    ReminderCard(node = node) {
+                                        viewModel.setSelectedNodeId(node.id)
+                                    }
+                                }
                             }
                         }
                     }
-                }
-
-                if (forgottenNodes.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text(
-                            "Forgotten Knowledge",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        forgottenNodes.forEach { node ->
-                            ReminderCard(node = node) {
-                                viewModel.setSelectedNodeId(node.id)
-                            }
-                        }
-                    }
-                }
-
-                Box(modifier = Modifier.weight(1f)) {
-                    GraphCanvas(
-                        graph = graphState,
-                        selectedNodeId = selectedNodeId,
-                        showEdgeWeights = showWeights,
-                        onNodeTap = { id -> viewModel.setSelectedNodeId(id) }
-                    )
                 }
             }
         }

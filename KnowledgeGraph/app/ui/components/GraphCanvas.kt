@@ -13,35 +13,52 @@ import androidx.compose.ui.unit.dp
 import com.knowledgegraph.app.model.GraphNode
 import com.knowledgegraph.app.model.GraphEdge
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+
 @Composable
 fun GraphCanvas(
     nodes: List<GraphNode>,
     edges: List<GraphEdge>,
-    triggerImageId: String? = null
+    selectedNodeId: String?,
+    onNodeTap: (String) -> Unit
 ) {
-    var overlayVisible by remember { mutableStateOf(triggerImageId != null) }
+    val nodePositions = remember { mutableStateMapOf<String, Offset>() }
+
+    // Animate node positions for smooth transitions
+    val animatedPositions = nodes.map { node ->
+        val animatedX = animateFloatAsState(targetValue = nodePositions[node.id]?.x ?: 0f).value
+        val animatedY = animateFloatAsState(targetValue = nodePositions[node.id]?.y ?: 0f).value
+        node.id to Offset(animatedX, animatedY)
+    }.toMap()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Basic graph rendering logic (omitted for brevity)
-        }
+            // Draw edges
+            edges.forEach { edge ->
+                val sourcePos = animatedPositions[edge.from]
+                val targetPos = animatedPositions[edge.to]
+                if (sourcePos != null && targetPos != null) {
+                    drawLine(
+                        color = Color.Gray,
+                        start = sourcePos,
+                        end = targetPos,
+                        strokeWidth = 2f
+                    )
+                }
+            }
 
-        if (overlayVisible && triggerImageId != null) {
-            val centerNode = nodes.find { it.id == triggerImageId }
-            val connected = edges.filter { it.from == triggerImageId || it.to == triggerImageId }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .background(Color(0xFF222222), shape = RoundedCornerShape(12.dp))
-                    .padding(16.dp)
-            ) {
-                Column {
-                    Text("Graph Insight for ${centerNode?.id}", color = Color.White)
-                    connected.forEach {
-                        Text("- ${it.type}: ${it.from} ↔ ${it.to}", color = Color.LightGray)
-                    }
+            // Draw nodes
+            nodes.forEach { node ->
+                val position = animatedPositions[node.id]
+                if (position != null) {
+                    drawCircle(
+                        color = if (node.id == selectedNodeId) Color.Blue else Color.Red,
+                        radius = 20f,
+                        center = position,
+                        style = if (node.id == selectedNodeId) Stroke(width = 5f) else Stroke(width = 0f)
+                    )
                 }
             }
         }
