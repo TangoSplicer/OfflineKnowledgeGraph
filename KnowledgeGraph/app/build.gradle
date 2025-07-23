@@ -47,6 +47,18 @@ android {
             useLegacyPackaging false
         }
     }
+
+    task("compileLisp", type: Exec) {
+        workingDir "src/main/lisp"
+        commandLine "sbcl", "--script", "compile.lisp"
+    }
+    preBuild.dependsOn compileLisp
+
+    task("compileMercury", type: Exec) {
+        workingDir "src/main/mercury"
+        commandLine "mmc", "--make"
+    }
+    preBuild.dependsOn compileMercury
 }
 
 dependencies {
