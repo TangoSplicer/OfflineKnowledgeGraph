@@ -121,6 +121,7 @@ fun MainScreen(
                             } finally {
                                 isSearching = false
 
+
             // Search bar
             Row(
                 modifier = Modifier
@@ -149,6 +150,7 @@ fun MainScreen(
                             for (i in 0 until parsed.length()) {
                                 val obj = parsed.getJSONObject(i)
                                 results.add(obj.optString("id") to obj.optString("label"))
+
 
                             }
                             searchResults = results
