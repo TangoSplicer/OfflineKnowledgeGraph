@@ -77,6 +77,50 @@ fun MainScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        decorationBox = { innerTextField ->
+                            if (searchQuery.isEmpty()) {
+                                Text("Search your knowledge...", color = Color.Gray)
+                            }
+                            innerTextField()
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    var isSearching by remember { mutableStateOf(false) }
+
+                    IconButton(onClick = {
+                        isSearching = true
+                        coroutineScope.launch {
+                            val resultJson = withContext(Dispatchers.IO) {
+                                com.knowledgegraph.app.bridge.ClojureBridge
+                                    .safeSearchGraph(searchQuery, viewModel.latestGraphJson)
+                            }
+                            try {
+                                val parsed = JSONArray(resultJson)
+                                val results = mutableListOf<Pair<String, String>>()
+                                for (i in 0 until parsed.length()) {
+                                    val obj = parsed.getJSONObject(i)
+                                    results.add(obj.optString("id") to obj.optString("label"))
+                                }
+                                searchResults = results
+                            } catch (e: Exception) {
+                                searchResults = emptyList()
+                                Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isSearching = false
+
             // Search bar
             Row(
                 modifier = Modifier
@@ -105,12 +149,23 @@ fun MainScreen(
                             for (i in 0 until parsed.length()) {
                                 val obj = parsed.getJSONObject(i)
                                 results.add(obj.optString("id") to obj.optString("label"))
+
                             }
                             searchResults = results
                         } catch (e: Exception) {
                             searchResults = emptyList()
                             Toast.makeText(context, "Search failed", Toast.LENGTH_SHORT).show()
                         }
+
+                    }) {
+                        if (isSearching) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        } else {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                    }
+                    VoiceInputButton { spokenText ->
+                        searchQuery = spokenText
                     }
                 }) {
                     Icon(Icons.Default.Search, contentDescription = "Search")
