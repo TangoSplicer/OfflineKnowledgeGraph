@@ -84,10 +84,29 @@ class ContextualSearchService(private val graphService: GraphService) {
                 node.label.equals(entity.text(), ignoreCase = true)
             }
         }
-        // TODO: Implement relationship extraction and graph traversal
-        document.sentences().forEach { sentence ->
-            println(sentence.dependencyParse())
+
+        val exploredNodes = mutableSetOf<GraphNode>()
+        for (sentence in document.sentences()) {
+            val dependencyParse = sentence.dependencyParse()
+            dependencyParse.edgeList().forEach { edge ->
+                val sourceNode = graphService.getNodeByLabel(edge.source().word())
+                val targetNode = graphService.getNodeByLabel(edge.target().word())
+
+                if (sourceNode != null && targetNode != null) {
+                    val relationshipType = edge.relation().toString()
+                    val newEdge = GraphEdge(
+                        source = sourceNode.id,
+                        target = targetNode.id,
+                        type = relationshipType,
+                        weight = 1.0
+                    )
+                    graphService.addEdge(newEdge)
+                    exploredNodes.add(sourceNode)
+                    exploredNodes.add(targetNode)
+                }
+            }
         }
-        return matchingNodes
+
+        return (matchingNodes + exploredNodes).distinct()
     }
 }

@@ -19,6 +19,22 @@ class GraphService {
     val latestGraphJson: String
         get() = Json.encodeToString(_graphState.value)
 
+    fun getAllNodes(): List<GraphNode> = _graphState.value.nodes
+
+    fun getNodeById(nodeId: String): GraphNode? =
+        _graphState.value.nodes.find { it.id == nodeId }
+
+    fun getNodeByLabel(label: String): GraphNode? =
+        _graphState.value.nodes.find { it.label.equals(label, ignoreCase = true) }
+
+    fun getEdgesForNode(nodeId: String): List<GraphEdge> =
+        _graphState.value.edges.filter { it.source == nodeId || it.target == nodeId }
+
+    fun addEdge(edge: GraphEdge) {
+        val currentGraph = _graphState.value
+        _graphState.value = currentGraph.copy(edges = currentGraph.edges + edge)
+    }
+
     fun updateGraphFromText(noteInput: String) {
         val graphJson = latestGraphJson
 
