@@ -4,6 +4,7 @@ import android.content.Context
 import com.knowledgegraph.app.model.PluginMetadata
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 
 object PluginManager {
 
@@ -24,6 +25,28 @@ object PluginManager {
                 }
             }.orEmpty()
     }
+
+    fun installPlugin(context: Context, inputStream: java.io.InputStream) {
+        ensurePluginDir(context)
+        val dir = File(context.filesDir, PLUGIN_DIR)
+        val tempFile = File.createTempFile("plugin", ".zip", dir)
+
+        FileOutputStream(tempFile).use { output ->
+            inputStream.copyTo(output)
+        }
+
+        // TODO: Unzip and process the plugin metadata
+    }
+
+    fun deletePlugin(context: Context, id: String) {
+        val dir = File(context.filesDir, PLUGIN_DIR)
+        val file = File(dir, "$id.json")
+        if (file.exists()) {
+            file.delete()
+        }
+        // TODO: Delete other plugin assets
+    }
+
 
     fun togglePlugin(context: Context, id: String, enabled: Boolean) {
         val dir = File(context.filesDir, PLUGIN_DIR)
