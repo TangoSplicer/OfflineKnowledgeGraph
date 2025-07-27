@@ -7,6 +7,8 @@ add_library(
     bridge_init.cpp
     interop.cpp
     lisp_bridge.cpp
+    mercury_bridge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/main/mercury/mercury_driver.o
 )
 
 # Locate native logging library
@@ -18,5 +20,7 @@ find_library(
 # Link JNI + logging
 target_link_libraries(
     native-lib
+    mercury
+    ${CMAKE_CURRENT_SOURCE_DIR}/main/mercury/lib/libmercury_runtime.a
     ${log-lib}
 )
