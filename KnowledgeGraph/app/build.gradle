@@ -48,6 +48,16 @@ android {
         }
     }
 
+    sourceSets {
+        test {
+            java.srcDirs = ['src/test/java']
+        }
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     task("compileLisp", type: Exec) {
         workingDir "src/main/lisp"
         commandLine "sbcl", "--script", "compile.lisp"
@@ -62,6 +72,8 @@ android {
 }
 
 dependencies {
+    implementation "org.clojure:clojure:1.11.1"
+    implementation "com.github.borkdude:inferior-lisp:0.3.0"
     implementation "androidx.core:core-ktx:1.13.1"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.7.0"
     implementation "androidx.activity:activity-compose:1.9.0"
@@ -71,4 +83,6 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
     implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'
     implementation 'com.google.mlkit:natural-language:22.0.1'
+
+    testImplementation 'junit:junit:4.13.2'
 }

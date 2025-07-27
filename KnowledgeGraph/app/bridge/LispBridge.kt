@@ -18,6 +18,6 @@ external object LispBridge {
         """.trimIndent()
         ClojureBridge.safeUpdateGraph(payload)
     } catch (e: UnsatisfiedLinkError) {
-        "(error \"Lisp bridge not available\")"
+        "(error \"Lisp bridge not available: ${e.message}\")"
     }
 }

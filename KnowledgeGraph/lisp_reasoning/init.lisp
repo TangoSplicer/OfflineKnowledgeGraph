@@ -1,4 +1,6 @@
 ;; lisp_reasoning/init.lisp
+(ql:quickload :cl-json)
+
 (defpackage :reasoning.init
   (:use :cl :reasoning.core :reasoning.rules :reasoning.plugin.runtime))
 (in-package :reasoning.init)
