@@ -8,12 +8,16 @@ external object MercuryBridge {
     fun safeCheckConsistency(graphJson: String): Boolean = try {
         checkConsistency(graphJson)
     } catch (e: UnsatisfiedLinkError) {
+        // In a real app, you'd want to log this error
+        e.printStackTrace()
         false
     }
 
     fun safeRunInference(graphJson: String): String = try {
         runInference(graphJson)
     } catch (e: UnsatisfiedLinkError) {
-        "inference_error"
+        // In a real app, you'd want to log this error
+        e.printStackTrace()
+        "{\"error\":\"inference_error\", \"details\":\"${e.message}\"}"
     }
 }

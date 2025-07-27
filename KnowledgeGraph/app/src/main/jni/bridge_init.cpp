@@ -17,8 +17,10 @@ Java_com_knowledgegraph_app_bridge_ClojureBridge_updateGraph(JNIEnv* env, jobjec
 
     try {
         result = clojure_call_update_graph(input);  // Calls into your clojure.api/update-graph-from-text
+    } catch (const std::exception& e) {
+        result = "{\"error\":\"Clojure update failed\", \"details\":\"" + std::string(e.what()) + "\"}";
     } catch (...) {
-        result = "{\"error\":\"Clojure update failed\"}";
+        result = "{\"error\":\"Clojure update failed\", \"details\":\"Unknown error\"}";
     }
 
     return env->NewStringUTF(result.c_str());
@@ -37,8 +39,10 @@ Java_com_knowledgegraph_app_bridge_ClojureBridge_getPluginSuggestions(JNIEnv* en
     std::string result;
     try {
         result = clojure_call_get_plugin_suggestions(inputChars);
+    } catch (const std::exception& e) {
+        result = "{\"error\":\"Clojure call failed\", \"details\":\"" + std::string(e.what()) + "\"}";
     } catch (...) {
-        result = "{\"error\":\"Clojure call failed\"}";
+        result = "{\"error\":\"Clojure call failed\", \"details\":\"Unknown error\"}";
     }
     env->ReleaseStringUTFChars(json, inputChars);
     return env->NewStringUTF(result.c_str());
@@ -51,8 +55,10 @@ Java_com_knowledgegraph_app_bridge_ClojureBridge_togglePlugin(JNIEnv* env, jobje
     std::string result;
     try {
         result = clojure_call_toggle_plugin(idChars);
+    } catch (const std::exception& e) {
+        result = "{\"error\":\"Clojure call failed\", \"details\":\"" + std::string(e.what()) + "\"}";
     } catch (...) {
-        result = "{\"error\":\"Clojure call failed\"}";
+        result = "{\"error\":\"Clojure call failed\", \"details\":\"Unknown error\"}";
     }
     env->ReleaseStringUTFChars(pluginId, idChars);
     return env->NewStringUTF(result.c_str());
@@ -65,8 +71,10 @@ Java_com_knowledgegraph_app_bridge_ClojureBridge_searchGraph(JNIEnv* env, jobjec
     std_string result;
     try {
         result = clojure_call_run_semantic_search(inputChars);
+    } catch (const std::exception& e) {
+        result = "{\"error\":\"Clojure call failed\", \"details\":\"" + std::string(e.what()) + "\"}";
     } catch (...) {
-        result = "{\"error\":\"Clojure call failed\"}";
+        result = "{\"error\":\"Clojure call failed\", \"details\":\"Unknown error\"}";
     }
     env->ReleaseStringUTFChars(json, inputChars);
     return env->NewStringUTF(result.c_str());

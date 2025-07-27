@@ -12,8 +12,10 @@ std::string clojure_search_graph(const std::string& queryPayload) {
             auto* result = (*invoke)(arg);
             return result->toString();
         }
+    } catch (const std::exception& e) {
+        return "{\"error\":\"semantic_search_failed\", \"details\":\"" + std::string(e.what()) + "\"}";
     } catch (...) {
-        return "{\"error\":\"semantic_search_failed\"}";
+        return "{\"error\":\"semantic_search_failed\", \"details\":\"Unknown error\"}";
     }
     return "{\"error\":\"null_semantic_result\"}";
 }
