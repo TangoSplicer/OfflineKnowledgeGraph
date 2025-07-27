@@ -15,7 +15,13 @@ std::string run_mercury_inference(const std::string& graphJson) {
     mercury_main_0_0();
 
     // In a real implementation, this would read the result
-    // from a file or a pipe.
+    // from a file or a picture 
+
+// Placeholder for the actual Mercury integration
+std::string run_mercury_inference(const std::string& graphJson) {
+    // In a real implementation, this would parse the JSON,
+    // convert it to Mercury facts, run the inference,
+    // and then convert the result back to a string.
     return "{\"result\": \"Mercury inference result\"}";
 }
 
@@ -29,6 +35,8 @@ bool check_mercury_consistency(const std::string& graphJson) {
 
     // In a real implementation, this would read the result
     // from a file or a pipe.
+    // In a real implementation, this would parse the JSON,
+    // convert it to Mercury facts, and then check for consistency.
     return true;
 }
 
