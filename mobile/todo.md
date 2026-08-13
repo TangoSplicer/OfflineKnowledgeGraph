@@ -1,0 +1,25 @@
+# Project TODO
+
+- [x] Define the Offline Knowledge Graph mobile information architecture and local data vocabulary
+- [x] Create an Android-first visual system with a research-focused color palette
+- [x] Build the Today dashboard with graph context, activity, and review cues
+- [x] Build the Explore graph experience with concept selection and relationship filtering
+- [x] Build the Concept Detail experience with backlinks and relationship actions
+- [x] Build the Library and Settings screens using local-only data
+- [x] Add search and new-concept interaction flows
+- [x] Refine portrait layout and dark-system presentation for Android
+- [x] Generate and configure a custom launcher icon and app branding
+- [x] Validate TypeScript and the Expo project health
+- [x] Create a final checkpoint for APK production
+- [x] Optimize and package the user-supplied launcher icon for native APK assets
+- [x] Build an on-device full-text concept index with ranked discovery
+- [x] Upgrade the search sheet with relevance feedback and match highlights
+- [x] Add automated full-text search accuracy tests
+- [x] Review existing relationship data and concept-detail actions
+- [x] Add local relationship creation, type editing, and removal controls
+- [x] Test relationship editing behavior and validate the mobile project
+- [x] Add relationship notes with local persistence and editing controls
+- [x] Add JSON export and restore for local relationship backups
+- [x] Render live relationship edits in the Explore graph canvas
+- [ ] Validate and update the Android APK CI workflow as needed
+- [ ] Push completed mobile and CI changes to GitHub
