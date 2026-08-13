@@ -1,4 +1,6 @@
 export type ConceptKind = "Theory" | "Method" | "Evidence" | "Question" | "Person";
+export const conceptKinds = ["Theory", "Method", "Evidence", "Question", "Person"] as const;
+export const isConceptKind = (value: string): value is ConceptKind => conceptKinds.includes(value as ConceptKind);
 
 export type Concept = {
   id: string;
@@ -24,6 +26,7 @@ export type Connection = {
 };
 
 export type NewConnectionInput = Omit<Connection, "id" | "note"> & { note?: string };
+export type NewConceptInput = { title: string; kind: ConceptKind; note: string };
 
 export type RelationshipView = {
   connection: Connection;
@@ -155,6 +158,17 @@ export const isRelationshipType = (value: string): value is RelationshipType =>
 export const clampRelationshipStrength = (strength: number) => Math.max(1, Math.min(5, Math.round(strength)));
 export const sanitizeRelationshipNote = (note: string | undefined) => (note ?? "").trim().slice(0, 2_000);
 
+const conceptColors = ["#7C6CFF", "#48D6E8", "#63D2A3", "#FFB86B", "#F48FB1"];
+const slugifyConceptTitle = (title: string) => title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "concept";
+
+export function createConceptRecord(input: NewConceptInput, existing: Concept[], now = Date.now()): Concept {
+  const title = input.title.trim().slice(0, 100);
+  const note = input.note.trim().slice(0, 2_000);
+  const baseId = slugifyConceptTitle(title);
+  const id = existing.some((concept) => concept.id === baseId) ? `${baseId}-${now.toString(36)}` : baseId;
+  return { id, title, kind: input.kind, summary: note || `A new ${input.kind.toLowerCase()} to explore.`, note, updatedAt: "Just now", backlinks: 0, color: conceptColors[existing.length % conceptColors.length] };
+}
+
 export function addConnection(existing: Connection[], input: NewConnectionInput): Connection[] {
   if (
     input.sourceId === input.targetId ||
@@ -194,12 +208,12 @@ export function updateConnection(
 export const removeConnection = (existing: Connection[], connectionId: string) =>
   existing.filter((connection) => connection.id !== connectionId);
 
-export function getConnectionsForConcept(existing: Connection[], conceptId: string): RelationshipView[] {
+export function getConnectionsForConcept(existing: Connection[], conceptId: string, availableConcepts: Concept[] = concepts): RelationshipView[] {
   return existing.flatMap((connection) => {
     if (!connectionIncludesConcept(connection, conceptId)) return [];
     const isOutgoing = connection.sourceId === conceptId;
     const otherId = isOutgoing ? connection.targetId : connection.sourceId;
-    const otherConcept = concepts.find((concept) => concept.id === otherId);
+    const otherConcept = availableConcepts.find((concept) => concept.id === otherId);
     return otherConcept ? [{ connection, otherConcept, isOutgoing }] : [];
   });
 }

@@ -2,18 +2,18 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { concepts, findConcept, relationshipTypes, type RelationshipType, type RelationshipView } from "@/lib/knowledge-data";
+import { findConcept, relationshipTypes, type RelationshipType, type RelationshipView } from "@/lib/knowledge-data";
 import { useRelationshipStore } from "@/lib/relationship-store";
 
 const strengthLabel = (strength: number) => ["Light", "Gentle", "Moderate", "Strong", "Core"][strength - 1] ?? "Moderate";
 
 export default function RelationshipManagerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const concept = findConcept(id ?? "adaptive-systems");
-  const { connections, relationshipsFor, addRelationship, updateRelationship, removeRelationship, isReady } = useRelationshipStore();
+  const { concepts: graphConcepts, connections, relationshipsFor, addRelationship, updateRelationship, removeRelationship, isReady } = useRelationshipStore();
+  const concept = graphConcepts.find((candidate) => candidate.id === id) ?? findConcept(id ?? "adaptive-systems");
   const relationships = relationshipsFor(concept.id);
   const connectedIds = useMemo(() => new Set(relationships.map(({ otherConcept }) => otherConcept.id)), [relationships]);
-  const candidates = useMemo(() => concepts.filter((candidate) => candidate.id !== concept.id && !connectedIds.has(candidate.id)), [concept.id, connectedIds]);
+  const candidates = useMemo(() => graphConcepts.filter((candidate) => candidate.id !== concept.id && !connectedIds.has(candidate.id)), [concept.id, connectedIds, graphConcepts]);
   const [selectedTargetId, setSelectedTargetId] = useState<string | undefined>(candidates[0]?.id);
   const [newRelationship, setNewRelationship] = useState<RelationshipType>("supports");
   const [newStrength, setNewStrength] = useState(3);
@@ -27,7 +27,7 @@ export default function RelationshipManagerScreen() {
 
   const addSelectedRelationship = () => {
     if (!selectedTargetId) return;
-    const target = concepts.find((candidate) => candidate.id === selectedTargetId);
+    const target = graphConcepts.find((candidate) => candidate.id === selectedTargetId);
     addRelationship({ sourceId: concept.id, targetId: selectedTargetId, relationship: newRelationship, strength: newStrength, note: "" });
     setNotice(`${target?.title ?? "Concept"} linked locally.`);
     setEditingId(null);

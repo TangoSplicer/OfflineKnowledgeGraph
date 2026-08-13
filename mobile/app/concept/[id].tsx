@@ -7,8 +7,8 @@ import { useRelationshipStore } from "@/lib/relationship-store";
 
 export default function ConceptDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const concept = findConcept(id ?? "adaptive-systems");
-  const { relationshipsFor } = useRelationshipStore();
+  const { concepts: graphConcepts, relationshipsFor } = useRelationshipStore();
+  const concept = graphConcepts.find((candidate) => candidate.id === id) ?? findConcept(id ?? "adaptive-systems");
   const relationships = relationshipsFor(concept.id);
   const related = relationships.map(({ otherConcept }) => otherConcept);
 

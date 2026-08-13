@@ -23,3 +23,21 @@
 - [x] Render live relationship edits in the Explore graph canvas
 - [x] Validate and update the Android APK CI workflow as needed
 - [x] Push completed mobile and CI changes to GitHub
+- [x] Extend JSON export and import to include full concept data alongside relationships
+- [x] Add clickable edge details in the Explore graph canvas for relationship notes and metadata
+- [x] Implement a search and filter panel in the Explore view for concepts and relationship types
+- [x] Write and run automated tests for complete backups, edge inspection, and Explore filtering
+- [x] Create an export feature to save the currently filtered graph as a shareable SVG or PNG image
+- [x] Implement persistent search history in the Explore view to save and quick-access recent queries
+- [x] Add a visual statistics dashboard to the Library screen for relationship types and strength distributions
+- [x] Write and run automated tests for search history persistence and graph statistics calculation
+- [x] Initialize local storage as an empty workspace by default instead of preloading demo graph data
+- [x] Add a prominent first-run welcome card with a direct 'Create your first concept' action and an optional 'Load demo graph' button
+- [x] Update Home, Explore, and Library screens to handle empty workspaces gracefully
+- [x] Write and run automated tests for empty-workspace initialization and demo loading
+- [x] Implement guided first-concept wizard for new users
+- [x] Write and run automated tests for wizard steps and state transitions
+- [x] Sync mobile updates to GitHub and verify Android APK CI workflow execution
+- [ ] Align root Android CI workflow paths with the committed mobile source directory
+- [ ] Document root Rust, FFI, CI, and mobile source ownership in the repository README
+- [ ] Push the CI alignment fix and verify the Android APK workflow against the committed source

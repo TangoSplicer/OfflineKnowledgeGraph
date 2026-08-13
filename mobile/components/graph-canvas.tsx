@@ -6,12 +6,19 @@ import { concepts as seededConcepts, connections as seededConnections } from "..
 import type { Concept, Connection } from "../lib/knowledge-data";
 import { visibleGraphConnections } from "../lib/graph-relationships";
 
+export type SelectedGraphEdge = {
+  connection: Connection;
+  source: Concept;
+  target: Concept;
+};
+
 type GraphCanvasProps = {
   compact?: boolean;
   concepts?: Concept[];
   connections?: Connection[];
   focusId?: string;
   onSelect: (id: string) => void;
+  onSelectEdge?: (edge: SelectedGraphEdge) => void;
 };
 
 type Position = { x: number; y: number };
@@ -29,14 +36,22 @@ const fallbackPosition = (index: number): Position => ({
   y: 0.23 + ((index * 0.31) % 0.54),
 });
 
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge }: GraphCanvasProps) {
   const canvasHeight = compact ? 250 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const visibleConcepts = useMemo(() => compact ? concepts.filter((concept) => concept.id !== "donella-meadows") : concepts, [compact, concepts]);
   const visibleConnections = useMemo(() => visibleGraphConnections(concepts, connections, compact), [compact, concepts, connections]);
   const positions = useMemo(() => new Map(visibleConcepts.map((concept, index) => [concept.id, POSITIONS[concept.id] ?? fallbackPosition(index)])), [visibleConcepts]);
   const notedConnections = visibleConnections.filter((connection) => connection.note.length > 0).length;
   const onLayout = (event: LayoutChangeEvent) => setCanvasWidth(event.nativeEvent.layout.width || 360);
+
+  const selectEdge = (connection: Connection) => {
+    setSelectedEdgeId(connection.id);
+    const source = concepts.find((concept) => concept.id === connection.sourceId);
+    const target = concepts.find((concept) => concept.id === connection.targetId);
+    if (source && target) onSelectEdge?.({ connection, source, target });
+  };
 
   return (
     <View onLayout={onLayout} style={[styles.canvas, { height: canvasHeight }, compact && styles.compactCanvas]}>
@@ -52,7 +67,8 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         const length = Math.hypot(endX - startX, endY - startY);
         const rotation = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
         const noted = Boolean(connection.note);
-        return <View key={connection.id} pointerEvents="none" style={[styles.edge, { width: length, left: (startX + endX - length) / 2, top: (startY + endY) / 2, height: noted ? 2 : 1, opacity: 0.24 + connection.strength * 0.11, backgroundColor: noted ? "#48D6E8" : "#7588B4", transform: [{ rotate: `${rotation}deg` }] }]} />;
+        const selected = selectedEdgeId === connection.id;
+        return <Pressable key={connection.id} accessibilityRole="button" accessibilityLabel={`Open ${connection.relationship} relationship`} onPress={() => selectEdge(connection)} style={({ pressed }) => [styles.edgeHitbox, { width: length + 20, left: (startX + endX - length) / 2 - 10, top: (startY + endY) / 2 - 14, transform: [{ rotate: `${rotation}deg` }] }, pressed && styles.edgePressed]}><View style={[styles.edge, { width: length, height: selected ? 4 : noted ? 2 : 1, opacity: selected ? 0.95 : 0.24 + connection.strength * 0.11, backgroundColor: selected ? "#FFFFFF" : noted ? "#48D6E8" : "#7588B4" }]} /></Pressable>;
       })}
       {visibleConcepts.map((concept, index) => {
         const position = positions.get(concept.id) ?? fallbackPosition(index);
@@ -60,7 +76,7 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         const nodeSize = (featured ? 110 : 72) * (compact ? 0.82 : 1);
         return <GraphNode key={concept.id} label={concept.title.split(" ")[0]} color={concept.color} style={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2, left: position.x * canvasWidth - nodeSize / 2, top: position.y * canvasHeight - nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
       })}
-      {!compact && <View pointerEvents="none" style={styles.legend}><View style={styles.legendLine} /><Text style={styles.legendText}>{visibleConnections.length} local links · {notedConnections} noted</Text></View>}
+      {!compact && <View pointerEvents="none" style={styles.legend}><View style={styles.legendLine} /><Text style={styles.legendText}>{visibleConnections.length} local links · {notedConnections} noted · tap a link for details</Text></View>}
     </View>
   );
 }
@@ -74,7 +90,9 @@ const styles = StyleSheet.create({
   compactCanvas: { borderRadius: 24 },
   orbit: { position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 1, borderColor: "rgba(124,108,255,0.22)", left: "18%", top: 47 },
   compactOrbit: { transform: [{ scale: 0.8 }], top: 21 },
-  edge: { position: "absolute", borderRadius: 4 },
+  edgeHitbox: { position: "absolute", height: 28, justifyContent: "center" },
+  edge: { borderRadius: 4, alignSelf: "center" },
+  edgePressed: { opacity: 0.58 },
   node: { position: "absolute", alignItems: "center", justifyContent: "center", paddingHorizontal: 8, shadowOpacity: 0.34, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
   featuredNode: { borderWidth: 2, borderColor: "rgba(255,255,255,0.35)" },
   nodePressed: { opacity: 0.78, transform: [{ scale: 0.96 }] },
