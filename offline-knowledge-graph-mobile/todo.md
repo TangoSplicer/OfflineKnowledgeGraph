@@ -1,0 +1,40 @@
+# Project TODO
+
+- [x] Define the Offline Knowledge Graph mobile information architecture and local data vocabulary
+- [x] Create an Android-first visual system with a research-focused color palette
+- [x] Build the Today dashboard with graph context, activity, and review cues
+- [x] Build the Explore graph experience with concept selection and relationship filtering
+- [x] Build the Concept Detail experience with backlinks and relationship actions
+- [x] Build the Library and Settings screens using local-only data
+- [x] Add search and new-concept interaction flows
+- [x] Refine portrait layout and dark-system presentation for Android
+- [x] Generate and configure a custom launcher icon and app branding
+- [x] Validate TypeScript and the Expo project health
+- [x] Create a final checkpoint for APK production
+- [x] Optimize and package the user-supplied launcher icon for native APK assets
+- [x] Build an on-device full-text concept index with ranked discovery
+- [x] Upgrade the search sheet with relevance feedback and match highlights
+- [x] Add automated full-text search accuracy tests
+- [x] Review existing relationship data and concept-detail actions
+- [x] Add local relationship creation, type editing, and removal controls
+- [x] Test relationship editing behavior and validate the mobile project
+- [x] Add relationship notes with local persistence and editing controls
+- [x] Add JSON export and restore for local relationship backups
+- [x] Render live relationship edits in the Explore graph canvas
+- [x] Validate and update the Android APK CI workflow as needed
+- [x] Push completed mobile and CI changes to GitHub
+- [x] Extend JSON export and import to include full concept data alongside relationships
+- [x] Add clickable edge details in the Explore graph canvas for relationship notes and metadata
+- [x] Implement a search and filter panel in the Explore view for concepts and relationship types
+- [x] Write and run automated tests for complete backups, edge inspection, and Explore filtering
+- [x] Create an export feature to save the currently filtered graph as a shareable SVG or PNG image
+- [x] Implement persistent search history in the Explore view to save and quick-access recent queries
+- [x] Add a visual statistics dashboard to the Library screen for relationship types and strength distributions
+- [x] Write and run automated tests for search history persistence and graph statistics calculation
+- [x] Initialize local storage as an empty workspace by default instead of preloading demo graph data
+- [x] Add a prominent first-run welcome card with a direct 'Create your first concept' action and an optional 'Load demo graph' button
+- [x] Update Home, Explore, and Library screens to handle empty workspaces gracefully
+- [x] Write and run automated tests for empty-workspace initialization and demo loading
+- [x] Implement guided first-concept wizard for new users
+- [x] Write and run automated tests for wizard steps and state transitions
+- [x] Sync mobile updates to GitHub and verify Android APK CI workflow execution
