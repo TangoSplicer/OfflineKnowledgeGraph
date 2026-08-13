@@ -21,5 +21,5 @@
 - [x] Add relationship notes with local persistence and editing controls
 - [x] Add JSON export and restore for local relationship backups
 - [x] Render live relationship edits in the Explore graph canvas
-- [ ] Validate and update the Android APK CI workflow as needed
-- [ ] Push completed mobile and CI changes to GitHub
+- [x] Validate and update the Android APK CI workflow as needed
+- [x] Push completed mobile and CI changes to GitHub
