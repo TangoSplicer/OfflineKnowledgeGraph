@@ -1,13 +1,15 @@
 (require :asdf)
 
 ;; Configure ASDF source-registry to find all .asd files inside dependencies and cffi directories
-(asdf:initialize-source-registry
- `(:source-registry
-   (:tree ,(merge-pathnames "trivial-features/" *default-pathname-defaults*))
-   (:tree ,(merge-pathnames "alexandria/" *default-pathname-defaults*))
-   (:tree ,(merge-pathnames "babel/" *default-pathname-defaults*))
-   (:tree ,(merge-pathnames "cffi/" *default-pathname-defaults*))
-   :inherit-configuration))
+(let ((base-dir (or (when (boundp '*load-pathname*) (make-pathname :directory (pathname-directory *load-pathname*)))
+                    *default-pathname-defaults*)))
+  (asdf:initialize-source-registry
+   `(:source-registry
+     (:tree ,(merge-pathnames "trivial-features/" base-dir))
+     (:tree ,(merge-pathnames "alexandria/" base-dir))
+     (:tree ,(merge-pathnames "babel/" base-dir))
+     (:tree ,(merge-pathnames "cffi/" base-dir))
+     :inherit-configuration)))
 
 ;; Load dependencies and cffi systems
 (asdf:load-system :trivial-features)
@@ -16,9 +18,11 @@
 (asdf:load-system :cffi)
 (format t "Successfully loaded Trivial-Features, Alexandria, Babel, and CFFI locally!~%")
 
-;; Test loading the Rust shared library via CFFI
-(pushnew #p"/home/ubuntu/OfflineKnowledgeGraph/rust-core/target/release/"
-         cffi:*foreign-library-directories*)
+;; Test loading the Rust shared library via CFFI using robust pathname resolution
+(let* ((base-dir (or (when (boundp '*load-pathname*) (make-pathname :directory (pathname-directory *load-pathname*)))
+                     *default-pathname-defaults*))
+       (rust-lib-dir (merge-pathnames "../rust-core/target/release/" base-dir)))
+  (pushnew rust-lib-dir cffi:*foreign-library-directories*))
 
 (cffi:define-foreign-library rust-core
   (:unix (:or "librust_core.so" "librust_core.dylib"))
