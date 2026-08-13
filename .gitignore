@@ -1,3 +1,10 @@
 # Project exclude paths
 /.gradle/
 /build/rust-core/target/
+/rust-core/target/
+
+# Downloaded only during local or CI Common Lisp FFI validation
+/common-lisp-ffi/alexandria/
+/common-lisp-ffi/babel/
+/common-lisp-ffi/cffi/
+/common-lisp-ffi/trivial-features/

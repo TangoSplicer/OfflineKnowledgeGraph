@@ -1,5 +1,3 @@
-use std::os::raw::c_void;
-
 pub struct KnowledgeGraph {
     pub node_count: usize,
     pub edge_count: usize,

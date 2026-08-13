@@ -2,33 +2,44 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
+permissions:
+  contents: read
 
 jobs:
   build-and-test:
+    name: Build Rust core and validate FFI bridge
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: dtolnay/rust-action@stable
-      with:
-        toolchain: stable
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Build Rust Core
-      run: |
-        cd rust-core
-        cargo build --release
+      - name: Build and test Rust core
+        working-directory: rust-core
+        run: |
+          cargo build --release --locked
+          cargo test --release --locked
 
-    - name: Set up SBCL and Run Common Lisp FFI Test
-      run: |
-        sudo apt-get update && sudo apt-get install -y sbcl
-        cd common-lisp-ffi
-        git clone https://github.com/trivial-features/trivial-features.git
-        git clone https://github.com/kmx-io/alexandria.git
-        git clone https://github.com/cl-babel/babel.git
-        git clone https://github.com/cffi/cffi.git
-        sbcl --non-interactive --load load_local_cffi.lisp
+      - name: Install SBCL
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes sbcl
+
+      - name: Fetch Common Lisp FFI dependencies
+        working-directory: common-lisp-ffi
+        run: |
+          git clone --depth 1 https://github.com/trivial-features/trivial-features.git
+          git clone --depth 1 https://github.com/kmx-io/alexandria.git
+          git clone --depth 1 https://github.com/cl-babel/babel.git
+          git clone --depth 1 https://github.com/cffi/cffi.git
+
+      - name: Validate Common Lisp to Rust FFI bridge
+        working-directory: common-lisp-ffi
+        run: sbcl --non-interactive --load load_local_cffi.lisp
