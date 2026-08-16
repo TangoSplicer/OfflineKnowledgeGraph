@@ -107,7 +107,7 @@ jobs:
   android-interaction-tests:
     name: Run Android Maestro interaction flows
     needs: build-android-apk
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     timeout-minutes: 35
 
     steps:
