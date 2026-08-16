@@ -126,8 +126,14 @@ jobs:
           name: offline-knowledge-graph-debug-apk
           path: mobile/android/app/build/outputs/apk/debug
 
-      - name: Install Maestro CLI
-        uses: dniHze/maestro-test-action@v1
+      - name: Install pinned Maestro CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MAESTRO_VERSION=1.39.0
+          curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 3 https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version
 
       - name: Run deterministic Android interaction flows
         uses: reactivecircus/android-emulator-runner@v2

@@ -30,6 +30,8 @@ pnpm test -- --run
 
 Native flow validation requires an Android emulator or device plus an installed debug build. After installation, run `maestro test .maestro` from the mobile directory. The workflow automates this sequence on macOS because its emulator runner is hardware-accelerated there.
 
+The CI job installs the official Maestro CLI at pinned version `1.39.0` through the documented `MAESTRO_VERSION` installer interface, with retry handling for transient download errors. The job verifies the installed version before it starts the emulator. This removes the prior dependency on a third-party setup action and keeps the flow runner version reviewable.
+
 ## Large-graph regression benchmarks
 
 [`tests/performance-benchmarks.test.ts`](../tests/performance-benchmarks.test.ts) uses deterministic but representative record shapes with tags, summaries, notes, evidence-confidence values, and six directed relationships per concept. The suite validates the real `encryptCompleteGraph`, `graphPositionFor`, and `filterExploreConnections` code paths rather than using mock implementation timing.
