@@ -3,6 +3,7 @@ import type { CookieOptions, Request } from "express";
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function isIpAddress(host: string) {
+  if (!host || typeof host !== "string") return false;
   // Basic IPv4 check and IPv6 presence detection.
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
   return host.includes(":");
@@ -25,6 +26,7 @@ function isSecureRequest(req: Request) {
  * This allows cookies set by 3000-xxx to be read by 8081-xxx
  */
 function getParentDomain(hostname: string): string | undefined {
+  if (!hostname || typeof hostname !== "string") return undefined;
   // Don't set domain for localhost or IP addresses
   if (LOCAL_HOSTS.has(hostname) || isIpAddress(hostname)) {
     return undefined;

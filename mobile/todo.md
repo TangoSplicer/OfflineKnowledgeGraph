@@ -38,6 +38,115 @@
 - [x] Implement guided first-concept wizard for new users
 - [x] Write and run automated tests for wizard steps and state transitions
 - [x] Sync mobile updates to GitHub and verify Android APK CI workflow execution
-- [ ] Align root Android CI workflow paths with the committed mobile source directory
-- [ ] Document root Rust, FFI, CI, and mobile source ownership in the repository README
-- [ ] Push the CI alignment fix and verify the Android APK workflow against the committed source
+- [x] Align root Android CI workflow paths with the committed mobile source directory
+- [x] Document root Rust, FFI, CI, and mobile source ownership in the repository README
+- [x] Push the CI alignment fix and verify the Android APK workflow against the committed source
+- [x] Validate guided first-concept wizard entry, progression, completion, and skip flows
+- [x] Add deterministic wizard state and completion contract coverage
+- [x] Review first-run findings and prioritize the next usability enhancements
+- [x] Add reusable first-concept templates for reading notes, projects, and questions
+- [x] Add a first-run prompt to restore a complete JSON graph backup
+- [x] Add contextual first-Explore guidance with dismissible tooltips
+- [x] Test concept templates, first-run restore, and Explore guidance behavior
+- [x] Add editable first-concept template fields before wizard creation
+- [x] Add a backup summary preview before users confirm graph restoration
+- [x] Add a Settings control to replay the Explore guide
+- [x] Test template customization, backup previews, and guide replay behavior
+- [x] Add a guided first-relationship editor after first-concept creation
+- [x] Persist user-created concept templates for reuse in future wizard sessions
+- [x] Add selective concept and relationship choices during JSON backup restore
+- [x] Test first-relationship creation, saved templates, and selective restore behavior
+- [x] Add rename and delete management controls for saved custom concept templates
+- [x] Add editing for an existing concept's title, kind, summary, and working note
+- [x] Visualize relationship strength as edge weight in the Explore graph
+- [x] Test template management, concept updates, and relationship-strength rendering
+- [x] Replace Library collection taps with meaningful collection-aware graph exploration
+- [x] Add a complete written explanation of the local graph, its relationships, and key concepts
+- [x] Provide context-sensitive, actionable next-step ideas for graph development
+- [x] Test collection navigation, graph narrative generation, and action recommendations
+- [x] Add locally persisted tags to concepts and support tag-based graph views
+- [x] Add layout controls for clearer exploration of dense graphs
+- [x] Add a local recent activity timeline for concept and relationship changes
+- [x] Test tag filtering, graph layouts, and activity history behavior
+- [x] Add tag-based graph clustering and focused cluster exploration
+- [x] Add safe local concept archiving with relationship preservation and restore
+- [x] Add editable, linkable source references to concepts and relationships
+- [x] Test cluster calculations, archive and restore behavior, and source-reference validation
+- [x] Add annotated source references with quotations for concepts and relationships
+- [x] Add relationship evidence confidence scores and visual treatment
+- [x] Add a timeline view focused on concept archive and restoration events
+- [x] Test annotated sources, confidence scores, and archive activity views
+- [x] Draft a next-stage enhancement roadmap for user review after completing this roadmap
+- [x] Build an evidence review workspace for weak, unsupported, and uncited relationships
+- [x] Add graph path discovery, bridge concept insights, and concept comparison
+- [x] Create a local capture inbox with templates, batch tags, and concept promotion
+- [x] Add maintenance review cues and a local weekly review dashboard
+- [x] Add selective knowledge exchange bundles, import conflict preview, and readable graph report
+- [x] Test all next-stage local-first graph workflows and validate project health
+- [x] Draft the following roadmap for user discussion after completing this stage
+- [x] Add transparent local connection suggestions with explicit user confirmation
+- [x] Add multi-hop focus mode for clearer exploration of dense graph neighborhoods
+- [x] Add a research-question workspace for claims, counterpoints, sources, and open gaps
+- [x] Test suggestion ranking, focus neighborhoods, and question-workspace behavior
+- [x] Persist accepted and dismissed connection-suggestion feedback locally
+- [x] Incorporate transparent feedback weights into local suggestion ranking
+- [x] Show feedback effects and reset controls in the connection-suggestion workspace
+- [x] Test feedback persistence, ranking adjustments, and reset behavior
+- [x] Persist per-suggestion feedback reasons for accepted and dismissed candidates
+- [x] Add a persistent feedback-history timeline to the suggestion workspace
+- [x] Add ranking-sensitivity previews before feedback is submitted
+- [x] Expand deterministic UI-level and workflow test coverage for suggestion feedback
+- [x] Add editable feedback reasons for previously recorded suggestion outcomes
+- [x] Add transparent signal-weight recommendations based on recurring local feedback patterns
+- [x] Add validated feedback-profile export, preview, and import controls
+- [x] Test feedback edits, recommendations, and portable profile exchange workflows
+- [x] Design an end-to-end encrypted feedback-profile sync protocol with recovery material
+- [x] Add authenticated encrypted feedback-profile storage and cross-device synchronization
+- [x] Add sync status, explicit conflict recovery, and device-safe local controls
+- [x] Test encryption envelopes, authenticated sync, conflict handling, and recovery boundaries
+- [x] Add biometric confirmation for encrypted sync, recovery, and remote deletion actions
+- [x] Add trusted-device enrollment, labeling, and remote device revocation controls
+- [x] Add end-to-end encrypted complete-graph sync with encrypted conflict preview and recovery
+- [x] Test biometric gates, device trust state, encrypted graph envelopes, and conflict resolution
+
+- [x] Add tamper-evident encrypted sync audit events and a local audit-history view
+- [x] Add user-managed automatic encrypted backup schedules with safe pause and execution controls
+- [x] Add selective encrypted subgraph sync with preview and conflict-safe recovery
+- [x] Test audit integrity, schedule validation, subgraph selection, and encrypted sync boundaries
+- [x] Save a checkpoint for sync audit, scheduled backups, and selective subgraph sync
+
+- [x] Add direct password-protected peer bundle export and import review
+- [x] Add bounded encrypted remote snapshot history with rollback controls
+- [x] Add scheduled-backup completion, failure, and conflict notification cues
+- [x] Test peer exchange, snapshot retention and rollback, and notification scheduling
+- [x] Save a checkpoint for peer exchange, encrypted snapshots, and backup notifications
+
+- [x] Add QR-based trusted-device pairing with secure confirmation
+- [x] Add encrypted snapshot diff review before rollback
+- [x] Add Home dashboard scheduled-backup status summary and next-run cues
+- [x] Update onboarding, in-app guides, README, and encrypted-sync tutorials
+- [x] Test pairing, snapshot diff, dashboard summary, and tutorial entry points
+- [x] Save a checkpoint for QR pairing, snapshot diff review, dashboard status, and tutorial updates
+
+- [x] Implement ephemeral pairing-token protocol with expiry and replay prevention
+- [x] Build local Wi-Fi discovery and Bluetooth-capable exchange adapter
+- [x] Integrate adjacent pairing controls into device-pairing screen with biometric gates
+- [x] Test adjacent pairing expiry, transport fallback, and security boundaries
+- [x] Update tutorials and save a checkpoint for adjacent trusted-device pairing
+
+- [x] Implement opaque encrypted adjacent backup-bundle transfer over local Wi-Fi / Bluetooth LE with recipient confirmation
+- [x] Add interactive Home backup quick-run card with instant verification and status refresh
+- [x] Add tag and concept-kind filters to encrypted snapshot history
+- [x] Test adjacent bundle transfer, quick-run execution, snapshot filtering, and sync boundaries
+- [x] Update tutorials, save a checkpoint, and deliver the three enhancements
+
+- [x] Investigate and fix skipped authentication test with deterministic mock coverage
+- [x] Implement end-to-end coding test covering complete encrypted sync and graph lifecycle
+- [x] Run full check and test suite to confirm 100% passing status
+- [x] Save final checkpoint and report verification results
+
+- [x] Add accessible encryption and sync progress animation with staged status updates
+- [x] Strengthen CI test and Expo build verification for pull requests
+- [x] Add native Android interaction-test workflow documentation and deterministic flow coverage
+- [x] Add large-graph encryption and rendering performance benchmarks
+- [x] Run full validation, update documentation, and save a checkpoint for verification and progress feedback

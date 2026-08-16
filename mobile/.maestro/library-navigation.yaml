@@ -1,0 +1,9 @@
+appId: com.app.offlineknowledgegraphmobile
+---
+# Verifies that the Library tab remains reachable from a fresh, local-only workspace.
+- launchApp:
+    clearState: true
+- tapOn: "Library"
+- assertVisible: "Your graphs"
+- assertVisible: "Create concept"
+- assertVisible: "Load demo"

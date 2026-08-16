@@ -1,0 +1,2 @@
+ALTER TABLE `graph_sync_snapshots` ADD `conceptKinds` varchar(512) NOT NULL DEFAULT '[]';--> statement-breakpoint
+ALTER TABLE `graph_sync_snapshots` ADD `conceptTags` varchar(512) NOT NULL DEFAULT '[]';

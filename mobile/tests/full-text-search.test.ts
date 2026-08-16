@@ -22,4 +22,10 @@ describe("on-device full-text concept search", () => {
     expect(results[0]?.concept.id).toBe("adaptive-systems");
     expect(searchConceptIndex(index, "unrelated phrase")).toHaveLength(0);
   });
+
+  it("finds concepts through their locally assigned tags", () => {
+    const results = searchConceptIndex(index, "people");
+    expect(results[0]?.concept.id).toBe("donella-meadows");
+    expect(results[0]?.matchedFields).toContain("tags");
+  });
 });

@@ -51,7 +51,11 @@ const config: ExpoConfig = {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
     "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocalNetworkUsageDescription": "Offline Knowledge Graph uses your local network only to exchange explicitly approved encrypted backup bundles with a nearby trusted device.",
+      "NSBonjourServices": ["_okgpair._tcp"],
+      "NSBluetoothAlwaysUsageDescription": "Offline Knowledge Graph uses Bluetooth to discover and pair nearby trusted devices.",
+      "NSBluetoothPeripheralUsageDescription": "Offline Knowledge Graph advertises a short-lived pairing token to a device you choose.",
       }
   },
   android: {
@@ -64,7 +68,7 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS"],
+    permissions: ["POST_NOTIFICATIONS", "INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE", "CHANGE_WIFI_MULTICAST_STATE"],
     intentFilters: [
       {
         action: "VIEW",
@@ -86,6 +90,29 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    [
+      "munim-bluetooth",
+      {
+        bluetoothBackground: false,
+        androidBluetoothPermissions: ["scan", "connect", "advertise"],
+        multipeerServiceTypes: false,
+        localNetworkUsageDescription: "Offline Knowledge Graph uses your local network to discover nearby trusted devices for ephemeral pairing."
+      }
+    ],
+    "expo-background-task",
+    "expo-notifications",
+    [
+      "expo-camera",
+      {
+        cameraPermission: "Allow $(PRODUCT_NAME) to scan trusted-device pairing QR codes.",
+      },
+    ],
+    [
+      "expo-local-authentication",
+      {
+        faceIDPermission: "Allow $(PRODUCT_NAME) to confirm encrypted sync actions with Face ID.",
+      },
+    ],
     [
       "expo-audio",
       {
@@ -115,7 +142,7 @@ const config: ExpoConfig = {
       "expo-build-properties",
       {
         android: {
-          buildArchs: ["armeabi-v7a", "arm64-v8a"],
+          buildArchs: ["armeabi-v7a", "arm64-v8a", "x86_64"],
           minSdkVersion: 24,
         },
       },

@@ -5,6 +5,11 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: offline-knowledge-graph-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -70,11 +75,19 @@ jobs:
         working-directory: mobile
         run: pnpm install --frozen-lockfile
 
+      - name: Lint mobile source
+        working-directory: mobile
+        run: pnpm lint
+
+      - name: Validate Expo configuration
+        working-directory: mobile
+        run: npx expo config --type public
+
       - name: Validate mobile TypeScript and tests
         working-directory: mobile
         run: |
           pnpm check
-          pnpm test
+          pnpm test -- --run
 
       - name: Generate Android project
         working-directory: mobile
@@ -90,3 +103,50 @@ jobs:
           name: offline-knowledge-graph-debug-apk
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  android-interaction-tests:
+    name: Run Android Maestro interaction flows
+    needs: build-android-apk
+    runs-on: macos-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download Android debug APK
+        uses: actions/download-artifact@v5
+        with:
+          name: offline-knowledge-graph-debug-apk
+          path: mobile/android/app/build/outputs/apk/debug
+
+      - name: Install Maestro CLI
+        uses: dniHze/maestro-test-action@v1
+
+      - name: Run deterministic Android interaction flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          ram-size: 2048M
+          target: default
+          script: |
+            adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            cd mobile
+            maestro test --format=junit --output=maestro-artifacts/report.xml --no-ansi .maestro
+
+      - name: Upload Maestro evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: maestro-android-interaction-evidence
+          path: |
+            mobile/maestro-artifacts
+            mobile/.maestro/screenshots
+          if-no-files-found: warn

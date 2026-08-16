@@ -1,6 +1,6 @@
 import type { Concept } from "@/lib/knowledge-data";
 
-type SearchField = "title" | "kind" | "summary" | "note";
+type SearchField = "title" | "kind" | "summary" | "note" | "tags";
 
 type IndexedConcept = {
   concept: Concept;
@@ -20,6 +20,7 @@ const FIELD_WEIGHTS: Record<SearchField, number> = {
   kind: 6,
   summary: 5,
   note: 4,
+  tags: 7,
 };
 
 const normalize = (value: string) =>
@@ -40,7 +41,7 @@ const tokenMatchScore = (content: string, term: string) => {
 };
 
 function makeSnippet(concept: Concept, fields: SearchField[], query: string) {
-  const preferred = fields.includes("note") ? concept.note : fields.includes("summary") ? concept.summary : concept.summary;
+  const preferred = fields.includes("note") ? concept.note : fields.includes("summary") ? concept.summary : fields.includes("tags") ? `Tags: ${(concept.tags ?? []).map((tag) => `#${tag}`).join(" ")}` : concept.summary;
   const normalizedQuery = normalize(query);
   const position = normalize(preferred).indexOf(normalizedQuery);
   if (position < 0 || preferred.length <= 112) return preferred;
@@ -57,6 +58,7 @@ export function createConceptSearchIndex(concepts: Concept[]): IndexedConcept[] 
       kind: normalize(concept.kind),
       summary: normalize(concept.summary),
       note: normalize(concept.note),
+      tags: normalize((concept.tags ?? []).join(" ")),
     },
   }));
 }

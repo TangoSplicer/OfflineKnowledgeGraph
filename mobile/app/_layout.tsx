@@ -1,14 +1,20 @@
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
+import "@/lib/backup-background-task";
+import * as Notifications from "expo-notifications";
+import { configureBackupNotifications } from "@/lib/backup-notifications";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { RelationshipProvider } from "@/lib/relationship-store";
+import { CaptureInboxProvider } from "@/lib/capture-inbox";
+import { ResearchQuestionProvider } from "@/lib/research-questions";
+import { SuggestionFeedbackProvider } from "@/lib/suggestion-feedback";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -37,6 +43,16 @@ export default function RootLayout() {
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+    if (Platform.OS === "web") return;
+    void configureBackupNotifications();
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const url = response.notification.request.content.data?.url;
+      if (typeof url === "string" && url.startsWith("/")) router.push(url as never);
+    });
+    const last = Notifications.getLastNotificationResponse();
+    const lastUrl = last?.notification.request.content.data?.url;
+    if (typeof lastUrl === "string" && lastUrl.startsWith("/")) router.push(lastUrl as never);
+    return () => subscription.remove();
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
@@ -84,6 +100,9 @@ export default function RootLayout() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <RelationshipProvider>
+          <CaptureInboxProvider>
+          <ResearchQuestionProvider>
+          <SuggestionFeedbackProvider>
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
@@ -92,6 +111,9 @@ export default function RootLayout() {
             <Stack.Screen name="oauth/callback" />
           </Stack>
             <StatusBar style="auto" />
+          </SuggestionFeedbackProvider>
+          </ResearchQuestionProvider>
+          </CaptureInboxProvider>
           </RelationshipProvider>
         </QueryClientProvider>
       </trpc.Provider>

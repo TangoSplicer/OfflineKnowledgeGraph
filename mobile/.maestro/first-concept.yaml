@@ -1,0 +1,18 @@
+appId: com.app.offlineknowledgegraphmobile
+---
+# Starts from an empty local workspace and completes the first-concept wizard.
+- launchApp:
+    clearState: true
+- assertVisible: "Start with one idea."
+- tapOn: "Create your first concept"
+- assertVisible: "What idea do you want to keep close?"
+- tapOn: "e.g. Decision fatigue"
+- inputText: "Knowledge tracing"
+- tapOn: "Continue to the note"
+- assertVisible: "Why does Knowledge tracing matter?"
+- tapOn: "I want to remember that…"
+- inputText: "The test graph needs a concise working context."
+- tapOn: "Create this concept"
+- assertVisible: "Give Knowledge tracing a neighbor."
+- tapOn: "I’ll connect it later"
+- assertVisible: "Knowledge tracing"

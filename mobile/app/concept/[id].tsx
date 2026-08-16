@@ -1,16 +1,18 @@
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ConceptRow } from "@/components/concept-row";
 import { findConcept } from "@/lib/knowledge-data";
+import { sourceHost } from "@/lib/source-references";
 import { useRelationshipStore } from "@/lib/relationship-store";
 
 export default function ConceptDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { concepts: graphConcepts, relationshipsFor } = useRelationshipStore();
+  const { concepts: graphConcepts, relationshipsFor, archiveConcept } = useRelationshipStore();
   const concept = graphConcepts.find((candidate) => candidate.id === id) ?? findConcept(id ?? "adaptive-systems");
   const relationships = relationshipsFor(concept.id);
   const related = relationships.map(({ otherConcept }) => otherConcept);
+  const archive = () => Alert.alert("Archive this concept?", "It will be hidden from active graph views, while its relationships remain preserved for restoration.", [{ text: "Cancel", style: "cancel" }, { text: "Archive", style: "destructive", onPress: () => { archiveConcept(concept.id); router.replace("/(tabs)/library"); } }]);
 
   return (
     <View style={styles.screen}>
@@ -24,14 +26,16 @@ export default function ConceptDetailScreen() {
           <View>
             <View style={styles.nav}>
               <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.roundButton, pressed && styles.pressed]}><Text style={styles.back}>‹</Text></Pressable>
-              <Pressable onPress={() => router.push("/capture")} style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}><Text style={styles.editText}>Edit</Text></Pressable>
+              <Pressable onPress={() => router.push({ pathname: "/concept/[id]/edit", params: { id: concept.id } })} style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}><Text style={styles.editText}>Edit</Text></Pressable>
             </View>
             <View style={[styles.kindBadge, { borderColor: concept.color }]}><View style={[styles.kindDot, { backgroundColor: concept.color }]} /><Text style={styles.kindText}>{concept.kind.toUpperCase()}</Text></View>
             <Text style={styles.title}>{concept.title}</Text>
             <Text style={styles.summary}>{concept.summary}</Text>
             <View style={styles.statRow}><Stat value={`${concept.backlinks}`} label="Backlinks" /><View style={styles.statDivider} /><Stat value={`${relationships.length}`} label="Connections" /><View style={styles.statDivider} /><Stat value="Local" label="Storage" /></View>
             <View style={styles.noteCard}><Text style={styles.noteLabel}>WORKING NOTE</Text><Text style={styles.note}>{concept.note}</Text><Text style={styles.noteMeta}>{concept.updatedAt}</Text></View>
+            {concept.sourceUrls.length || concept.sourceAnnotation || concept.sourceQuote ? <View style={styles.sourcesCard}><Text style={styles.noteLabel}>SOURCE CONTEXT{concept.sourceUrls.length ? ` · ${concept.sourceUrls.length} LINKS` : ""}</Text>{concept.sourceUrls.map((url) => <Pressable key={url} onPress={() => Linking.openURL(url).catch(() => undefined)} style={({ pressed }) => [styles.sourceRow, pressed && styles.pressed]}><View style={styles.sourceGlyph}><Text style={styles.sourceGlyphText}>↗</Text></View><View style={styles.sourceCopy}><Text style={styles.sourceHost}>{sourceHost(url)}</Text><Text style={styles.sourceUrl} numberOfLines={1}>{url}</Text></View></Pressable>)}{concept.sourceAnnotation ? <View style={styles.annotationWrap}><Text style={styles.annotationLabel}>YOUR READING NOTE</Text><Text style={styles.annotationText}>{concept.sourceAnnotation}</Text></View> : null}{concept.sourceQuote ? <View style={styles.quoteWrap}><Text style={styles.quoteText}>“{concept.sourceQuote}”</Text></View> : null}</View> : null}
             <View style={styles.actionRow}><Pressable onPress={() => router.push("/(tabs)/explore")} style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}><Text style={styles.primaryActionText}>View in graph</Text></Pressable><Pressable onPress={() => router.push({ pathname: "/concept/[id]/relationships", params: { id: concept.id } })} style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}><Text style={styles.secondaryActionText}>Manage</Text></Pressable></View>
+            <Pressable onPress={archive} style={({ pressed }) => [styles.archiveButton, pressed && styles.pressed]}><Text style={styles.archiveText}>Archive concept</Text><Text style={styles.archiveHint}>Keep links preserved</Text></Pressable>
             <Text style={styles.sectionLabel}>RELATED CONCEPTS · {relationships.length}</Text>
           </View>
         }
@@ -66,11 +70,19 @@ const styles = StyleSheet.create({
   noteLabel: { color: "#48D6E8", fontSize: 10, letterSpacing: 1.2, fontWeight: "900", marginBottom: 9 },
   note: { color: "#E5EAF5", fontSize: 15, lineHeight: 23 },
   noteMeta: { color: "#7D8AA5", fontSize: 11, fontWeight: "600", marginTop: 13 },
+  sourcesCard: { borderRadius: 20, backgroundColor: "#102032", padding: 16, marginTop: 12, borderWidth: 1, borderColor: "#2C5470" },
+  sourceRow: { minHeight: 47, flexDirection: "row", alignItems: "center", borderTopWidth: 1, borderColor: "#25425C", marginTop: 10, paddingTop: 10 },
+  sourceGlyph: { width: 30, height: 30, borderRadius: 10, justifyContent: "center", alignItems: "center", backgroundColor: "#1C4257", marginRight: 10 },
+  sourceGlyphText: { color: "#8BE3E8", fontSize: 15, fontWeight: "900" },
+  sourceCopy: { flex: 1 }, sourceHost: { color: "#D7F4F6", fontSize: 12, fontWeight: "800" }, sourceUrl: { color: "#7BA7BD", fontSize: 10, marginTop: 3 },
+  annotationWrap: { borderTopWidth: 1, borderColor: "#25425C", paddingTop: 11, marginTop: 11 }, annotationLabel: { color: "#71D5DE", fontSize: 9, letterSpacing: 1, fontWeight: "900" }, annotationText: { color: "#B1CDDB", fontSize: 12, lineHeight: 18, marginTop: 6 }, quoteWrap: { borderLeftWidth: 2, borderColor: "#5AC9C4", marginTop: 12, paddingLeft: 11 }, quoteText: { color: "#C9F0E6", fontSize: 13, lineHeight: 19, fontStyle: "italic" },
   actionRow: { flexDirection: "row", gap: 10, marginTop: 16, marginBottom: 25 },
   primaryAction: { flex: 1, height: 48, borderRadius: 15, justifyContent: "center", alignItems: "center", backgroundColor: "#7C6CFF" },
   primaryActionText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   secondaryAction: { minWidth: 88, height: 48, borderRadius: 15, justifyContent: "center", alignItems: "center", backgroundColor: "#151C2E", borderWidth: 1, borderColor: "#33405C" },
   secondaryActionText: { color: "#E3E8F4", fontSize: 14, fontWeight: "800" },
+  archiveButton: { minHeight: 45, marginTop: -14, marginBottom: 25, borderRadius: 13, paddingHorizontal: 14, borderWidth: 1, borderColor: "#68495A", backgroundColor: "#211927", flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  archiveText: { color: "#F4BAC6", fontSize: 12, fontWeight: "900" }, archiveHint: { color: "#BA8796", fontSize: 10, fontWeight: "700" },
   sectionLabel: { color: "#7C89A5", fontSize: 11, letterSpacing: 1.2, fontWeight: "800", marginBottom: 10 },
   emptyText: { color: "#8D9BB4", fontSize: 13, lineHeight: 20, paddingVertical: 8 },
   pressed: { opacity: 0.7, transform: [{ scale: 0.98 }] },

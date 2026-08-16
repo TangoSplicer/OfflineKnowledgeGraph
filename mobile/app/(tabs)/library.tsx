@@ -1,4 +1,5 @@
 import { Stack, router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert, FlatList, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
@@ -6,7 +7,8 @@ import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { graphCollections } from "@/lib/knowledge-data";
+import { EXPLORE_GUIDANCE_KEY } from "@/lib/explore-guidance";
+import { graphViews } from "@/lib/graph-overview";
 import { parseGraphBackup, serializeGraphBackup } from "@/lib/relationship-backup";
 import { useRelationshipStore } from "@/lib/relationship-store";
 import { calculateRelationshipStatistics, type RelationshipStatistics } from "@/lib/relationship-statistics";
@@ -14,8 +16,13 @@ import { calculateRelationshipStatistics, type RelationshipStatistics } from "@/
 export default function LibraryScreen() {
   const [lowMotion, setLowMotion] = useState(false);
   const [backupStatus, setBackupStatus] = useState("Create a portable JSON backup before moving to another device.");
-  const { concepts, connections, isReady, replaceGraph, loadDemoGraph, clearWorkspace } = useRelationshipStore();
+  const { concepts, archivedConcepts, allConcepts, connections, allConnections, isReady, replaceGraph, loadDemoGraph, clearWorkspace } = useRelationshipStore();
   const relationshipStats = calculateRelationshipStatistics(connections);
+
+  const replayExploreGuide = async () => {
+    await AsyncStorage.removeItem(EXPLORE_GUIDANCE_KEY);
+    router.push("/(tabs)/explore");
+  };
 
   const exportBackup = async () => {
     if (!isReady) return;
@@ -27,10 +34,10 @@ export default function LibraryScreen() {
       const filename = `offline-knowledge-graph-${new Date().toISOString().slice(0, 10)}.json`;
       const backupFile = new File(Paths.cache, filename);
       backupFile.create({ overwrite: true, intermediates: true });
-      backupFile.write(serializeGraphBackup(concepts, connections));
+      backupFile.write(serializeGraphBackup(allConcepts, allConnections));
       if (!(await Sharing.isAvailableAsync())) throw new Error("Sharing is unavailable on this device.");
       await Sharing.shareAsync(backupFile.uri, { dialogTitle: "Export complete graph backup", mimeType: "application/json" });
-      setBackupStatus(`${concepts.length} concepts and ${connections.length} relationships packaged in a JSON backup.`);
+      setBackupStatus(`${allConcepts.length} concepts, including ${archivedConcepts.length} archived, and ${allConnections.length} relationships packaged in a JSON backup.`);
     } catch (error) {
       setBackupStatus(error instanceof Error ? error.message : "Unable to export a backup right now.");
     }
@@ -54,7 +61,7 @@ export default function LibraryScreen() {
     <ScreenContainer containerClassName="bg-background">
       <Stack.Screen options={{ headerShown: false }} />
       <FlatList
-        data={concepts.length ? graphCollections : []}
+        data={concepts.length ? graphViews : []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -62,7 +69,7 @@ export default function LibraryScreen() {
           <View>
             <Text style={styles.eyebrow}>LOCAL LIBRARY</Text>
             <Text style={styles.title}>Your graphs</Text>
-            <Text style={styles.subtitle}>Everything here is available offline on this device.</Text>
+            <Text style={styles.subtitle}>Every collection below opens a focused, local view of the ideas and relationships you have recorded.</Text>
             <Pressable onPress={() => router.push("/first-concept-wizard")} style={({ pressed }) => [styles.newButton, pressed && styles.pressed]}>
               <Text style={styles.newButtonText}>＋  Create local graph</Text>
             </Pressable>
@@ -70,12 +77,12 @@ export default function LibraryScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push("/(tabs)/explore")} style={({ pressed }) => [styles.collection, pressed && styles.pressed]}>
-            <View style={[styles.collectionMark, { backgroundColor: item.color }]}><Text style={styles.collectionGlyph}>◇</Text></View>
+          <Pressable onPress={() => router.push({ pathname: "/graph-overview" as never, params: { view: item.id } })} style={({ pressed }) => [styles.collection, pressed && styles.pressed]}>
+            <View style={[styles.collectionMark, { backgroundColor: item.color }]}><Text style={styles.collectionGlyph}>{item.glyph}</Text></View>
             <View style={styles.collectionCopy}>
               <Text style={styles.collectionTitle}>{item.name}</Text>
               <Text style={styles.collectionDescription} numberOfLines={2}>{item.description}</Text>
-              <Text style={styles.collectionMeta}>{item.nodeCount} concepts · {item.updatedAt}</Text>
+              <Text style={styles.collectionMeta}>Open focused graph view</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
@@ -92,6 +99,22 @@ export default function LibraryScreen() {
               <Switch value={lowMotion} onValueChange={setLowMotion} trackColor={{ false: "#33415F", true: "#7C6CFF" }} thumbColor="#F3F6FC" />
             </View>
             <View style={styles.storageRow}><View style={styles.storageDot} /><Text style={styles.storageText}>Local graph storage is healthy</Text></View>
+            <Pressable onPress={replayExploreGuide} style={({ pressed }) => [styles.replayGuide, pressed && styles.pressed]}><View><Text style={styles.replayGuideTitle}>Replay Explore guide</Text><Text style={styles.replayGuideDetail}>Review nodes, links, search, and filters.</Text></View><Text style={styles.replayGuideArrow}>→</Text></Pressable>
+            <Pressable onPress={() => router.push("/template-library")} style={({ pressed }) => [styles.templateLibrary, pressed && styles.pressed]}><View><Text style={styles.templateLibraryTitle}>Manage custom templates</Text><Text style={styles.templateLibraryDetail}>Rename or remove your reusable starting points.</Text></View><Text style={styles.templateLibraryArrow}>→</Text></Pressable>
+            <Pressable onPress={() => router.push("/archived-concepts" as never)} style={({ pressed }) => [styles.archiveLibrary, pressed && styles.pressed]}><View><Text style={styles.archiveLibraryTitle}>Archived concepts{archivedConcepts.length ? ` · ${archivedConcepts.length}` : ""}</Text><Text style={styles.archiveLibraryDetail}>Restore preserved ideas and their relationship history.</Text></View><Text style={styles.archiveLibraryArrow}>→</Text></Pressable>
+            <Text style={styles.workspaceLabel}>ADVANCED WORKSPACES</Text>
+            <WorkspaceLink title="Evidence review" detail="Strengthen weak, uncited, and unsupported relationships." tone="evidence" onPress={() => router.push("/evidence-review" as never)} />
+            <WorkspaceLink title="Connection suggestions" detail="Review local graph overlaps before confirming any proposed link." tone="suggestions" onPress={() => router.push("/connection-suggestions" as never)} />
+            <WorkspaceLink title="Paths and comparison" detail="Trace local routes and compare two ideas side by side." tone="paths" onPress={() => router.push("/graph-tools" as never)} />
+            <WorkspaceLink title="Research questions" detail="Organize claims, counterpoints, sources, and unanswered gaps." tone="questions" onPress={() => router.push("/research-questions" as never)} />
+            <WorkspaceLink title="Capture inbox" detail="Collect raw notes and promote selected captures into concepts." tone="capture" onPress={() => router.push("/capture-inbox" as never)} />
+            <WorkspaceLink title="Weekly review" detail="Turn evidence and structure gaps into a focused maintenance check." tone="review" onPress={() => router.push("/weekly-review" as never)} />
+            <WorkspaceLink title="Knowledge exchange" detail="Create selective bundles, reports, and import conflict previews." tone="exchange" onPress={() => router.push("/knowledge-exchange" as never)} />
+            <WorkspaceLink title="Sync audit trail" detail="Verify tamper-evident encrypted sync history and review recovery events." tone="security" onPress={() => router.push("/sync-audit" as never)} />
+            <WorkspaceLink title="Automatic encrypted backups" detail="Protect a user-held key, schedule backups, and pause them safely." tone="automation" onPress={() => router.push("/backup-schedules" as never)} />
+            <WorkspaceLink title="Selective encrypted sync" detail="Choose a focused concept subset and recover it without replacing unrelated work." tone="security" onPress={() => router.push("/selective-sync" as never)} />
+            <WorkspaceLink title="Encrypted version history" detail="Retain opaque remote snapshots, compare changes, and roll back deliberately." tone="security" onPress={() => router.push("/encrypted-snapshots" as never)} />
+            <WorkspaceLink title="Pair a trusted device" detail="Scan a QR identity token before sharing encrypted graph access." tone="security" onPress={() => router.push("/device-pairing" as never)} />
             {concepts.length ? <Pressable onPress={() => Alert.alert("Clear this workspace?", "This removes the current local concepts and relationships from this device.", [{ text: "Cancel", style: "cancel" }, { text: "Clear workspace", style: "destructive", onPress: clearWorkspace }])} style={({ pressed }) => [styles.clearWorkspace, pressed && styles.pressed]}><Text style={styles.clearWorkspaceText}>Start over with an empty workspace</Text></Pressable> : null}
             <View style={backupStyles.section}>
               <Text style={backupStyles.title}>Complete graph backup</Text>
@@ -119,6 +142,7 @@ function RelationshipDashboard({ stats }: { stats: RelationshipStatistics }) {
 }
 
 function Stat({ label, value }: { label: string; value: string }) { return <View style={statsStyles.stat}><Text style={statsStyles.statValue}>{value}</Text><Text style={statsStyles.statLabel}>{label}</Text></View>; }
+function WorkspaceLink({ title, detail, tone, onPress }: { title: string; detail: string; tone: "evidence" | "suggestions" | "paths" | "questions" | "capture" | "review" | "exchange" | "security" | "automation"; onPress: () => void }) { const toneStyle = tone === "evidence" ? styles.workspaceEvidence : tone === "suggestions" || tone === "security" ? styles.workspaceSuggestions : tone === "paths" ? styles.workspacePaths : tone === "questions" ? styles.workspaceQuestions : tone === "capture" ? styles.workspaceCapture : tone === "review" || tone === "automation" ? styles.workspaceReview : styles.workspaceExchange; return <Pressable onPress={onPress} style={({ pressed }) => [styles.workspace, toneStyle, pressed && styles.pressed]}><View><Text style={styles.workspaceTitle}>{title}</Text><Text style={styles.workspaceDetail}>{detail}</Text></View><Text style={styles.workspaceArrow}>→</Text></Pressable>; }
 
 const styles = StyleSheet.create({
   content: { width: "100%", maxWidth: 480, alignSelf: "center", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 116 },
@@ -145,6 +169,17 @@ const styles = StyleSheet.create({
   storageRow: { flexDirection: "row", alignItems: "center", marginTop: 17, paddingTop: 14, borderTopWidth: 1, borderColor: "#26314B" },
   storageDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#63D2A3", marginRight: 8 },
   storageText: { color: "#A9B6CD", fontSize: 12, fontWeight: "600" },
+  replayGuide: { minHeight: 62, borderRadius: 14, marginTop: 15, paddingHorizontal: 13, backgroundColor: "#152B3A", borderWidth: 1, borderColor: "#3C6B82", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  replayGuideTitle: { color: "#D8F0F4", fontSize: 13, fontWeight: "900" },
+  replayGuideDetail: { color: "#8CAFC0", fontSize: 11, marginTop: 3 },
+  replayGuideArrow: { color: "#78DCE6", fontSize: 19, fontWeight: "900" },
+  templateLibrary: { minHeight: 62, borderRadius: 14, marginTop: 10, paddingHorizontal: 13, backgroundColor: "#1C2743", borderWidth: 1, borderColor: "#4A5E92", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  templateLibraryTitle: { color: "#E7E5FF", fontSize: 13, fontWeight: "900" },
+  templateLibraryDetail: { color: "#A6B0D7", fontSize: 11, marginTop: 3 },
+  templateLibraryArrow: { color: "#B9B2FF", fontSize: 19, fontWeight: "900" },
+  archiveLibrary: { minHeight: 62, borderRadius: 14, marginTop: 10, paddingHorizontal: 13, backgroundColor: "#2A2024", borderWidth: 1, borderColor: "#654A59", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  archiveLibraryTitle: { color: "#FFD2BF", fontSize: 13, fontWeight: "900" }, archiveLibraryDetail: { color: "#D3AEB1", fontSize: 11, marginTop: 3 }, archiveLibraryArrow: { color: "#F0A98C", fontSize: 19, fontWeight: "900" },
+  workspaceLabel: { color: "#71809A", fontSize: 9, letterSpacing: 1, fontWeight: "900", marginTop: 18, marginBottom: 8 }, workspace: { minHeight: 57, borderRadius: 13, paddingHorizontal: 12, marginTop: 7, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1 }, workspaceEvidence: { backgroundColor: "#2A1F2D", borderColor: "#6D465E" }, workspaceSuggestions: { backgroundColor: "#242148", borderColor: "#655EBB" }, workspacePaths: { backgroundColor: "#1C2141", borderColor: "#5256A3" }, workspaceQuestions: { backgroundColor: "#30261F", borderColor: "#77583B" }, workspaceCapture: { backgroundColor: "#112C34", borderColor: "#3A7380" }, workspaceReview: { backgroundColor: "#2D2938", borderColor: "#6A5D79" }, workspaceExchange: { backgroundColor: "#162B3A", borderColor: "#3D6D86" }, workspaceTitle: { color: "#E8EDF8", fontSize: 12, fontWeight: "900" }, workspaceDetail: { color: "#9CAAC0", fontSize: 10, lineHeight: 15, marginTop: 3, maxWidth: 270 }, workspaceArrow: { color: "#BCD4E6", fontSize: 18, fontWeight: "900" },
   pressed: { opacity: 0.7 },
 });
 

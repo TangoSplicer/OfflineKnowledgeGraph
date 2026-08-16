@@ -1,8 +1,10 @@
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { findConcept, relationshipTypes, type RelationshipType, type RelationshipView } from "@/lib/knowledge-data";
+import { sourceHost, sourceUrlsFromText, sourceUrlsToText } from "@/lib/source-references";
+import { confidenceDots, evidenceConfidenceColor, evidenceConfidenceLabel } from "@/lib/relationship-evidence";
 import { useRelationshipStore } from "@/lib/relationship-store";
 
 const strengthLabel = (strength: number) => ["Light", "Gentle", "Moderate", "Strong", "Core"][strength - 1] ?? "Moderate";
@@ -99,10 +101,13 @@ export default function RelationshipManagerScreen() {
   );
 }
 
-function RelationshipCard({ item, isEditing, onToggle, onUpdate, onRemove }: { item: RelationshipView; isEditing: boolean; onToggle: () => void; onUpdate: (changes: { relationship?: RelationshipType; strength?: number; note?: string }) => void; onRemove: () => void }) {
+function RelationshipCard({ item, isEditing, onToggle, onUpdate, onRemove }: { item: RelationshipView; isEditing: boolean; onToggle: () => void; onUpdate: (changes: { relationship?: RelationshipType; strength?: number; note?: string; sourceUrls?: string[]; sourceAnnotation?: string; sourceQuote?: string; evidenceConfidence?: number }) => void; onRemove: () => void }) {
   const { connection, otherConcept, isOutgoing } = item;
   const [note, setNote] = useState(connection.note);
-  useEffect(() => setNote(connection.note), [connection.note]);
+  const [sourceUrls, setSourceUrls] = useState(sourceUrlsToText(connection.sourceUrls));
+  const [sourceAnnotation, setSourceAnnotation] = useState(connection.sourceAnnotation ?? "");
+  const [sourceQuote, setSourceQuote] = useState(connection.sourceQuote ?? "");
+  useEffect(() => { setNote(connection.note); setSourceUrls(sourceUrlsToText(connection.sourceUrls)); setSourceAnnotation(connection.sourceAnnotation ?? ""); setSourceQuote(connection.sourceQuote ?? ""); }, [connection.note, connection.sourceUrls, connection.sourceAnnotation, connection.sourceQuote]);
   return <View style={[styles.relationshipCard, isEditing && styles.relationshipCardOpen]}>
     <Pressable onPress={onToggle} style={({ pressed }) => [styles.relationshipHead, pressed && styles.pressed]}>
       <View style={[styles.targetDot, styles.connectionDot, { backgroundColor: otherConcept.color }]} />
@@ -110,11 +115,18 @@ function RelationshipCard({ item, isEditing, onToggle, onUpdate, onRemove }: { i
       <View style={styles.editPill}><Text style={styles.editPillText}>{isEditing ? "Close" : "Edit"}</Text></View>
     </Pressable>
     <View style={styles.strengthInfo}><Text style={styles.strengthText}>{strengthLabel(connection.strength)} link</Text><StrengthBars strength={connection.strength} /></View>
+    <View style={confidenceStyles.summary}><Text style={confidenceStyles.label}>Evidence · {evidenceConfidenceLabel(connection.evidenceConfidence)}</Text><View style={confidenceStyles.dots}>{confidenceDots(connection.evidenceConfidence).map((filled, index) => <View key={index} style={[confidenceStyles.dot, filled && { backgroundColor: evidenceConfidenceColor(connection.evidenceConfidence) }]} />)}</View></View>
     {connection.note ? <Text style={noteStyles.preview} numberOfLines={2}>{connection.note}</Text> : null}
+    {connection.sourceUrls.length ? <View style={noteStyles.sourcePreview}>{connection.sourceUrls.map((url) => <Pressable key={url} onPress={() => Linking.openURL(url).catch(() => undefined)} style={({ pressed }) => [noteStyles.sourceLink, pressed && styles.pressed]}><Text style={noteStyles.sourceLinkText}>↗ {sourceHost(url)}</Text></Pressable>)}</View> : null}
+    {connection.sourceAnnotation ? <Text style={noteStyles.annotation} numberOfLines={3}>Source note · {connection.sourceAnnotation}</Text> : null}
+    {connection.sourceQuote ? <Text style={noteStyles.quote} numberOfLines={4}>“{connection.sourceQuote}”</Text> : null}
     {isEditing ? <View style={styles.editor}>
       <RelationshipTypePicker value={connection.relationship} onChange={(relationship) => onUpdate({ relationship })} compact />
       <StrengthPicker value={connection.strength} onChange={(strength) => onUpdate({ strength })} />
+      <EvidenceConfidencePicker value={connection.evidenceConfidence} onChange={(evidenceConfidence) => onUpdate({ evidenceConfidence })} />
       <View style={noteStyles.editorGroup}><Text style={styles.fieldLabel}>RELATIONSHIP NOTE</Text><TextInput value={note} onChangeText={setNote} placeholder="Why does this link matter?" placeholderTextColor="#71809A" multiline maxLength={2000} textAlignVertical="top" style={noteStyles.input} /><Pressable onPress={() => onUpdate({ note })} style={({ pressed }) => [noteStyles.saveButton, pressed && styles.pressed]}><Text style={noteStyles.saveText}>Save note</Text></Pressable></View>
+      <View style={noteStyles.editorGroup}><Text style={styles.fieldLabel}>SOURCE LINKS</Text><TextInput value={sourceUrls} onChangeText={setSourceUrls} placeholder="One full https:// URL per line" placeholderTextColor="#71809A" multiline autoCapitalize="none" autoCorrect={false} textAlignVertical="top" style={noteStyles.sourceInput} /><Pressable onPress={() => onUpdate({ sourceUrls: sourceUrlsFromText(sourceUrls) })} style={({ pressed }) => [noteStyles.saveButton, pressed && styles.pressed]}><Text style={noteStyles.saveText}>Save sources</Text></Pressable></View>
+      <View style={noteStyles.contextCard}><Text style={styles.fieldLabel}>SOURCE ANNOTATION</Text><TextInput value={sourceAnnotation} onChangeText={setSourceAnnotation} placeholder="Why does this evidence matter?" placeholderTextColor="#71809A" multiline maxLength={900} textAlignVertical="top" style={noteStyles.contextInput} /><Text style={styles.fieldLabel}>KEY QUOTATION</Text><TextInput value={sourceQuote} onChangeText={setSourceQuote} placeholder="A supporting passage worth preserving" placeholderTextColor="#71809A" multiline maxLength={1200} textAlignVertical="top" style={noteStyles.quoteInput} /><Pressable onPress={() => onUpdate({ sourceAnnotation, sourceQuote })} style={({ pressed }) => [noteStyles.saveButton, pressed && styles.pressed]}><Text style={noteStyles.saveText}>Save source context</Text></Pressable></View>
       <Pressable onPress={onRemove} style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}><Text style={styles.removeText}>Remove relationship</Text></Pressable>
     </View> : null}
   </View>;
@@ -126,6 +138,10 @@ function RelationshipTypePicker({ value, onChange, compact = false }: { value: R
 
 function StrengthPicker({ value, onChange }: { value: number; onChange: (strength: number) => void }) {
   return <View style={styles.pickerSection}><View style={styles.strengthHeading}><Text style={styles.fieldLabel}>CONNECTION STRENGTH</Text><Text style={styles.strengthLabel}>{strengthLabel(value)}</Text></View><View style={styles.strengthPicker}>{[1, 2, 3, 4, 5].map((strength) => <Pressable key={strength} onPress={() => onChange(strength)} style={({ pressed }) => [styles.strengthOption, value === strength && styles.strengthOptionActive, pressed && styles.pressed]}><Text style={[styles.strengthOptionText, value === strength && styles.strengthOptionTextActive]}>{strength}</Text></Pressable>)}</View></View>;
+}
+
+function EvidenceConfidencePicker({ value, onChange }: { value: number | undefined; onChange: (confidence: number) => void }) {
+  return <View style={styles.pickerSection}><View style={styles.strengthHeading}><Text style={styles.fieldLabel}>EVIDENCE CONFIDENCE</Text><Text style={[styles.strengthLabel, { color: evidenceConfidenceColor(value) }]}>{evidenceConfidenceLabel(value)}</Text></View><View style={styles.strengthPicker}>{[1, 2, 3, 4, 5].map((confidence) => <Pressable key={confidence} onPress={() => onChange(confidence)} style={({ pressed }) => [styles.strengthOption, value === confidence && { backgroundColor: "#173E43", borderColor: evidenceConfidenceColor(confidence) }, pressed && styles.pressed]}><Text style={[styles.strengthOptionText, value === confidence && { color: evidenceConfidenceColor(confidence) }]}>{confidence}</Text></Pressable>)}</View></View>;
 }
 
 function StrengthBars({ strength }: { strength: number }) { return <View style={styles.bars}>{[1, 2, 3, 4, 5].map((bar) => <View key={bar} style={[styles.bar, bar <= strength && styles.barActive]} />)}</View>; }
@@ -140,4 +156,18 @@ const noteStyles = StyleSheet.create({
   input: { minHeight: 94, borderRadius: 12, padding: 12, color: "#EAF0FA", fontSize: 13, lineHeight: 19, backgroundColor: "#0E1627", borderWidth: 1, borderColor: "#30405E" },
   saveButton: { height: 40, alignSelf: "flex-end", marginTop: 9, paddingHorizontal: 13, justifyContent: "center", borderRadius: 10, backgroundColor: "#27235A" },
   saveText: { color: "#D9D5FF", fontSize: 12, fontWeight: "900" },
+  sourcePreview: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 15, paddingBottom: 12 },
+  sourceLink: { minHeight: 25, justifyContent: "center", paddingHorizontal: 8, borderRadius: 8, backgroundColor: "#1A3447", borderWidth: 1, borderColor: "#376782" },
+  sourceLinkText: { color: "#9CE4E9", fontSize: 10, fontWeight: "800" },
+  sourceInput: { minHeight: 74, borderRadius: 12, padding: 12, color: "#D2ECFA", fontSize: 12, lineHeight: 18, backgroundColor: "#102133", borderWidth: 1, borderColor: "#315A75" },
+  annotation: { color: "#91BDCE", fontSize: 11, lineHeight: 17, paddingHorizontal: 15, paddingBottom: 10 },
+  quote: { color: "#C3EAEA", fontSize: 12, fontStyle: "italic", lineHeight: 18, paddingHorizontal: 15, paddingBottom: 13 },
+  contextCard: { borderRadius: 13, padding: 12, marginTop: 18, backgroundColor: "#102B30", borderWidth: 1, borderColor: "#315F64" },
+  contextInput: { minHeight: 76, borderRadius: 11, padding: 11, color: "#D9EDF1", fontSize: 12, lineHeight: 18, backgroundColor: "#0E202B", borderWidth: 1, borderColor: "#315A75" },
+  quoteInput: { minHeight: 86, borderRadius: 11, padding: 11, color: "#D1F0E7", fontSize: 12, lineHeight: 18, backgroundColor: "#0E202B", borderWidth: 1, borderColor: "#3C7775" },
+});
+
+const confidenceStyles = StyleSheet.create({
+  summary: { minHeight: 30, paddingHorizontal: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#202E49" },
+  label: { color: "#9BA9C2", fontSize: 10, fontWeight: "800" }, dots: { flexDirection: "row", gap: 3 }, dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#2A3854" },
 });

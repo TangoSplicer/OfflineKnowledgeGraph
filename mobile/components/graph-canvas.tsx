@@ -5,6 +5,9 @@ import type { LayoutChangeEvent } from "react-native";
 import { concepts as seededConcepts, connections as seededConnections } from "../lib/knowledge-data";
 import type { Concept, Connection } from "../lib/knowledge-data";
 import { visibleGraphConnections } from "../lib/graph-relationships";
+import { edgeOpacity, edgeStrokeWidth, strengthLabel } from "../lib/relationship-strength-visuals";
+import { graphPositionFor, type GraphLayout } from "../lib/graph-layouts";
+import { evidenceConfidenceColor, evidenceConfidenceLabel } from "../lib/relationship-evidence";
 
 export type SelectedGraphEdge = {
   connection: Connection;
@@ -19,30 +22,18 @@ type GraphCanvasProps = {
   focusId?: string;
   onSelect: (id: string) => void;
   onSelectEdge?: (edge: SelectedGraphEdge) => void;
+  layout?: GraphLayout;
 };
 
 type Position = { x: number; y: number };
 
-const POSITIONS: Record<string, Position> = {
-  "adaptive-systems": { x: 0.5, y: 0.52 },
-  "feedback-loops": { x: 0.78, y: 0.27 },
-  "cognitive-load": { x: 0.2, y: 0.7 },
-  "boundary-conditions": { x: 0.74, y: 0.76 },
-  "donella-meadows": { x: 0.17, y: 0.24 },
-};
-
-const fallbackPosition = (index: number): Position => ({
-  x: 0.18 + ((index * 0.23) % 0.64),
-  y: 0.23 + ((index * 0.31) % 0.54),
-});
-
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced" }: GraphCanvasProps) {
   const canvasHeight = compact ? 250 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const visibleConcepts = useMemo(() => compact ? concepts.filter((concept) => concept.id !== "donella-meadows") : concepts, [compact, concepts]);
   const visibleConnections = useMemo(() => visibleGraphConnections(concepts, connections, compact), [compact, concepts, connections]);
-  const positions = useMemo(() => new Map(visibleConcepts.map((concept, index) => [concept.id, POSITIONS[concept.id] ?? fallbackPosition(index)])), [visibleConcepts]);
+  const positions = useMemo(() => new Map(visibleConcepts.map((concept, index) => [concept.id, graphPositionFor(concept.id, index, visibleConcepts.length, layout)])), [visibleConcepts, layout]);
   const notedConnections = visibleConnections.filter((connection) => connection.note.length > 0).length;
   const onLayout = (event: LayoutChangeEvent) => setCanvasWidth(event.nativeEvent.layout.width || 360);
 
@@ -68,15 +59,16 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         const rotation = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
         const noted = Boolean(connection.note);
         const selected = selectedEdgeId === connection.id;
-        return <Pressable key={connection.id} accessibilityRole="button" accessibilityLabel={`Open ${connection.relationship} relationship`} onPress={() => selectEdge(connection)} style={({ pressed }) => [styles.edgeHitbox, { width: length + 20, left: (startX + endX - length) / 2 - 10, top: (startY + endY) / 2 - 14, transform: [{ rotate: `${rotation}deg` }] }, pressed && styles.edgePressed]}><View style={[styles.edge, { width: length, height: selected ? 4 : noted ? 2 : 1, opacity: selected ? 0.95 : 0.24 + connection.strength * 0.11, backgroundColor: selected ? "#FFFFFF" : noted ? "#48D6E8" : "#7588B4" }]} /></Pressable>;
+        const confidence = connection.evidenceConfidence;
+        return <Pressable key={connection.id} accessibilityRole="button" accessibilityLabel={`Open ${connection.relationship} relationship, ${strengthLabel(connection.strength)}, ${evidenceConfidenceLabel(confidence)} evidence`} onPress={() => selectEdge(connection)} style={({ pressed }) => [styles.edgeHitbox, { width: length + 20, left: (startX + endX - length) / 2 - 10, top: (startY + endY) / 2 - 14, transform: [{ rotate: `${rotation}deg` }] }, pressed && styles.edgePressed]}><View style={[styles.edge, { width: length, height: selected ? 5.2 : edgeStrokeWidth(connection.strength, noted), opacity: selected ? 1 : Math.max(edgeOpacity(connection.strength, false), 0.46 + ((confidence ?? 3) * 0.09)), backgroundColor: selected ? "#FFFFFF" : evidenceConfidenceColor(confidence) }]} /></Pressable>;
       })}
       {visibleConcepts.map((concept, index) => {
-        const position = positions.get(concept.id) ?? fallbackPosition(index);
+        const position = positions.get(concept.id) ?? graphPositionFor(concept.id, index, visibleConcepts.length, layout);
         const featured = concept.id === focusId;
         const nodeSize = (featured ? 110 : 72) * (compact ? 0.82 : 1);
         return <GraphNode key={concept.id} label={concept.title.split(" ")[0]} color={concept.color} style={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2, left: position.x * canvasWidth - nodeSize / 2, top: position.y * canvasHeight - nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
       })}
-      {!compact && <View pointerEvents="none" style={styles.legend}><View style={styles.legendLine} /><Text style={styles.legendText}>{visibleConnections.length} local links · {notedConnections} noted · tap a link for details</Text></View>}
+      {!compact && <View style={styles.legend}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={styles.legendText}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
     </View>
   );
 }
@@ -99,6 +91,9 @@ const styles = StyleSheet.create({
   nodeText: { color: "#08101D", textAlign: "center", fontSize: 10, fontWeight: "800", lineHeight: 13 },
   featuredText: { color: "#FFFFFF", fontSize: 13, lineHeight: 17 },
   legend: { position: "absolute", left: 15, bottom: 13, flexDirection: "row", alignItems: "center", borderRadius: 11, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: "rgba(11,16,32,0.84)" },
-  legendLine: { width: 14, height: 2, borderRadius: 2, backgroundColor: "#48D6E8", marginRight: 6 },
+  legendLines: { width: 17, height: 13, justifyContent: "space-around", marginRight: 6 },
+  legendLine: { width: 14, borderRadius: 3, backgroundColor: "#48D6E8" },
+  legendLineLight: { height: 1.5, opacity: 0.58 },
+  legendLineStrong: { height: 4, opacity: 0.98 },
   legendText: { color: "#A5B2CB", fontSize: 10, fontWeight: "700" },
 });

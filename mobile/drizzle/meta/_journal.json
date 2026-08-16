@@ -8,6 +8,48 @@
       "when": 1763372440610,
       "tag": "0000_elite_eternals",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1786803180103,
+      "tag": "0001_elite_archangel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786816573215,
+      "tag": "0002_nebulous_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1786877460013,
+      "tag": "0003_sharp_khan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786881623344,
+      "tag": "0004_fluffy_marvel_apes",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1786896943717,
+      "tag": "0005_graceful_captain_britain",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1786896991048,
+      "tag": "0006_unique_stardust",
+      "breakpoints": true
     }
   ]
 }

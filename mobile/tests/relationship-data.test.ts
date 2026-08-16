@@ -27,4 +27,9 @@ describe("local relationship data", () => {
     expect(updated.find((connection) => connection.id === "adaptive-feedback")).toMatchObject({ relationship: "explains", strength: 5 });
     expect(removeConnection(updated, "adaptive-feedback").some((connection) => connection.id === "adaptive-feedback")).toBe(false);
   });
+
+  it("persists local source context and evidence confidence on a relationship", () => {
+    const updated = updateConnection(connections, "adaptive-feedback", { sourceAnnotation: "Observed in a system map.", sourceQuote: "Signals change behavior.", evidenceConfidence: 5 });
+    expect(updated.find((connection) => connection.id === "adaptive-feedback")).toMatchObject({ sourceAnnotation: "Observed in a system map.", sourceQuote: "Signals change behavior.", evidenceConfidence: 5 });
+  });
 });
