@@ -144,8 +144,7 @@ jobs:
           target: default
           script: |
             adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
-            cd mobile
-            maestro test --format=junit --output=maestro-artifacts/report.xml --no-ansi .maestro
+            maestro test --format=junit --output=mobile/maestro-artifacts/report.xml --no-ansi mobile/.maestro
 
       - name: Upload Maestro evidence
         if: always()
