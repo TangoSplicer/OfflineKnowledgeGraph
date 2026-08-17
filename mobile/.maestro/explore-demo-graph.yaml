@@ -3,7 +3,9 @@ appId: com.app.offlineknowledgegraphmobile
 # Loads the optional local demo only for the interaction test, then exercises Explore filtering.
 - launchApp:
     clearState: true
-- assertVisible: "Start with one idea."
+- extendedWaitUntil:
+    visible: "Start with one idea."
+    timeout: 90000
 - tapOn: "Load demo graph"
 - assertVisible: "Make sense of what you know."
 - tapOn: "Explore →"

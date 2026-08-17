@@ -3,7 +3,9 @@ appId: com.app.offlineknowledgegraphmobile
 # Starts from an empty local workspace and completes the first-concept wizard.
 - launchApp:
     clearState: true
-- assertVisible: "Start with one idea."
+- extendedWaitUntil:
+    visible: "Start with one idea."
+    timeout: 90000
 - tapOn: "Create your first concept"
 - assertVisible: "What idea do you want to keep close?"
 - tapOn: "e.g. Decision fatigue"

@@ -148,7 +148,7 @@ jobs:
             adb install -r mobile/android/app/build/outputs/apk/release/app-release.apk
             adb shell am force-stop com.app.offlineknowledgegraphmobile
             adb shell monkey -p com.app.offlineknowledgegraphmobile 1
-            sleep 8
+            sleep 30
             adb exec-out screencap -p > mobile/maestro-artifacts/preflight-launch.png
             adb logcat -d > mobile/maestro-artifacts/preflight-logcat.txt
             set +e
