@@ -143,8 +143,13 @@ jobs:
           ram-size: 2048M
           target: default
           script: |
+            mkdir -p mobile/maestro-artifacts
             adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
-            maestro test --format=junit --output=mobile/maestro-artifacts/report.xml --no-ansi mobile/.maestro
+            set +e
+            maestro test --debug-output mobile/maestro-artifacts --format=junit --output=mobile/maestro-artifacts/report.xml --no-ansi mobile/.maestro
+            maestro_exit_code=$?
+            adb logcat -d > mobile/maestro-artifacts/android-logcat.txt || true
+            exit $maestro_exit_code
 
       - name: Upload Maestro evidence
         if: always()
