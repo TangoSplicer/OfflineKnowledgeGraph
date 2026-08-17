@@ -322,6 +322,7 @@ function StepOne({
         {templates.map((template) => (
           <Pressable
             key={template.id}
+            testID={`first-concept-template-${template.id}`}
             onPress={() => onApplyTemplate(template)}
             style={({ pressed }) => [
               styles.templateChip,
