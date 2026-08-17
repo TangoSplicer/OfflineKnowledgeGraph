@@ -11,8 +11,8 @@ The repository workflow at [`.github/workflows/ci.yml`](../../.github/workflows/
 | Rust and FFI validation | Rust core and Common Lisp bridge | Release build and tests complete before mobile delivery checks. |
 | Lint and Expo configuration | Mobile source and resolved Expo config | Source quality warnings are visible and configuration resolves successfully. |
 | TypeScript and Vitest | Mobile domain logic, encryption, progress model, and workflows | `pnpm check` and the full deterministic Vitest suite pass. |
-| Android debug APK | Expo prebuild plus Gradle | A debug APK containing `armeabi-v7a`, `arm64-v8a`, and `x86_64` ABIs is attached as an artifact. |
-| Maestro Android flows | Installed debug APK in an API 29 emulator | JUnit report and any captured interaction evidence are retained as CI artifacts. |
+| Android release APK | Expo prebuild plus Gradle | A release APK with bundled JavaScript and `armeabi-v7a`, `arm64-v8a`, and `x86_64` ABIs is attached as an artifact. |
+| Maestro Android flows | Installed release APK in an API 29 emulator | JUnit report and any captured interaction evidence are retained as CI artifacts. |
 
 The Maestro flows in [`mobile/.maestro`](../.maestro) clear local application state before every scenario. They cover the first-concept wizard, optional demo-graph navigation into Explore and its filters, and Library access from an empty workspace. See [`.maestro/README.md`](../.maestro/README.md) for local execution guidance.
 

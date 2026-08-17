@@ -50,7 +50,7 @@ jobs:
         run: sbcl --non-interactive --load load_local_cffi.lisp
 
   build-android-apk:
-    name: Validate mobile app and build Android APK
+    name: Validate mobile app and build Android release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -93,15 +93,15 @@ jobs:
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install --clean
 
-      - name: Assemble debug APK
+      - name: Assemble release APK with bundled JavaScript
         working-directory: mobile/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
-      - name: Upload Android debug APK
+      - name: Upload Android release APK
         uses: actions/upload-artifact@v6
         with:
-          name: offline-knowledge-graph-debug-apk
-          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          name: offline-knowledge-graph-release-apk
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
   android-interaction-tests:
@@ -120,11 +120,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Download Android debug APK
+      - name: Download Android release APK
         uses: actions/download-artifact@v5
         with:
-          name: offline-knowledge-graph-debug-apk
-          path: mobile/android/app/build/outputs/apk/debug
+          name: offline-knowledge-graph-release-apk
+          path: mobile/android/app/build/outputs/apk/release
 
       - name: Install pinned Maestro CLI
         shell: bash
@@ -144,7 +144,7 @@ jobs:
           target: default
           script: |
             mkdir -p mobile/maestro-artifacts
-            adb install -r mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r mobile/android/app/build/outputs/apk/release/app-release.apk
             set +e
             maestro test --debug-output mobile/maestro-artifacts --format=junit --output=mobile/maestro-artifacts/report.xml --no-ansi mobile/.maestro
             maestro_exit_code=$?
