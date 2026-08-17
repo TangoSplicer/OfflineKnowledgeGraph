@@ -1,6 +1,6 @@
 appId: com.app.offlineknowledgegraphmobile
 ---
-# Starts from an empty local workspace and completes the first-concept wizard.
+# Starts from an empty local workspace and completes the first-concept wizard through a visible template.
 - launchApp:
     clearState: true
 - extendedWaitUntil:
@@ -8,15 +8,10 @@ appId: com.app.offlineknowledgegraphmobile
     timeout: 90000
 - tapOn: "Create your first concept"
 - assertVisible: "What idea do you want to keep close?"
-- tapOn:
-    id: "first-concept-title-input"
-- inputText: "Knowledge tracing"
+- tapOn: "Reading note"
 - tapOn: "Continue to the note"
-- assertVisible: "Why does Knowledge tracing matter?"
-- tapOn:
-    id: "first-concept-note-input"
-- inputText: "The test graph needs a concise working context."
+- assertVisible: "Why does A useful idea from my reading matter?"
 - tapOn: "Create this concept"
-- assertVisible: "Give Knowledge tracing a neighbor."
-- tapOn: "I’ll connect it later"
-- assertVisible: "Knowledge tracing"
+- assertVisible: "Give A useful idea from my reading a useful neighbor."
+- tapOn: "Later"
+- assertVisible: "A useful idea from my reading"
