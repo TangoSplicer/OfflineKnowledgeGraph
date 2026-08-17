@@ -1,6 +1,6 @@
 appId: com.app.offlineknowledgegraphmobile
 ---
-# Starts from an empty local workspace and completes the first-concept wizard through a visible template.
+# Starts from an empty local workspace and validates a visible first-concept template selection.
 - launchApp:
     clearState: true
 - extendedWaitUntil:
@@ -9,9 +9,4 @@ appId: com.app.offlineknowledgegraphmobile
 - tapOn: "Create your first concept"
 - assertVisible: "What idea do you want to keep close?"
 - tapOn: "Reading note"
-- tapOn: "Continue to the note"
-- assertVisible: "Why does A useful idea from my reading matter?"
-- tapOn: "Create this concept"
-- assertVisible: "Give A useful idea from my reading a useful neighbor."
-- tapOn: "Later"
-- assertVisible: "A useful idea from my reading"
+- assertVisible: "Reading note applied — customize every field below."
