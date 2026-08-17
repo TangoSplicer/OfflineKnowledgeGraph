@@ -30,7 +30,7 @@ pnpm test -- --run
 
 Native flow validation requires an Android emulator or device plus an installed debug build. After installation, run `maestro test .maestro` from the mobile directory. The workflow automates this sequence on an Ubuntu hosted runner using an x86_64 Android emulator, avoiding dependence on constrained macOS runner capacity.
 
-The CI job installs the official Maestro CLI at pinned version `1.39.0` through the documented `MAESTRO_VERSION` installer interface, with retry handling for transient download errors. The job verifies the installed version before it starts an API 29 `x86_64` emulator on the Ubuntu runner. This removes the prior dependency on a third-party setup action and keeps the flow runner version reviewable.
+The CI job installs the official Maestro CLI at pinned version `1.39.0` through the documented `MAESTRO_VERSION` installer interface, with retry handling for transient download errors. The job verifies the installed version before it starts an API 29 `x86_64` emulator on the Ubuntu runner with a 4 GiB RAM allocation and a 1 GiB heap. This removes the prior dependency on a third-party setup action and keeps the flow runner version reviewable.
 
 ## Large-graph regression benchmarks
 
