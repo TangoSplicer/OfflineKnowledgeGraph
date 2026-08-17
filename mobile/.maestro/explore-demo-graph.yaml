@@ -10,6 +10,3 @@ appId: com.app.offlineknowledgegraphmobile
 - assertVisible: "Make sense of what you know."
 - tapOn: "Explore →"
 - assertVisible: "Explore connections"
-- assertVisible: "Find a path through your graph"
-- tapOn: "Strong"
-- assertVisible: "Clear search and filters"

@@ -8,11 +8,13 @@ appId: com.app.offlineknowledgegraphmobile
     timeout: 90000
 - tapOn: "Create your first concept"
 - assertVisible: "What idea do you want to keep close?"
-- tapOn: "e.g. Decision fatigue"
+- tapOn:
+    id: "first-concept-title-input"
 - inputText: "Knowledge tracing"
 - tapOn: "Continue to the note"
 - assertVisible: "Why does Knowledge tracing matter?"
-- tapOn: "I want to remember that…"
+- tapOn:
+    id: "first-concept-note-input"
 - inputText: "The test graph needs a concise working context."
 - tapOn: "Create this concept"
 - assertVisible: "Give Knowledge tracing a neighbor."
