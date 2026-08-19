@@ -9,6 +9,7 @@ import { appendGraphActivity, createGraphActivity, isGraphActivity, type GraphAc
 import { normalizeConceptTags } from "@/lib/concept-tags";
 import { activeGraphConnections, archiveConceptInState, restoreConceptInState, splitArchivedConcepts } from "@/lib/archive-state";
 import { createDemoWorkspace, isSeededDemoConnections, isSeededDemoWorkspace } from "@/lib/workspace-state";
+import { persistLocalGraphEdit } from "@/lib/local-export-status";
 
 const STORAGE_KEY = "offline-knowledge-graph.graph.v2";
 const LEGACY_RELATIONSHIP_KEY = "offline-knowledge-graph.relationships.v1";
@@ -100,42 +101,42 @@ export function RelationshipProvider({ children }: PropsWithChildren) {
   const addConcept = useCallback((input: NewConceptInput) => {
     const concept = createConceptRecord(input, allConcepts);
     setConcepts((current) => [...current, concept]);
-    recordActivity("concept-created", `Created ${concept.title}`, `New ${concept.kind.toLowerCase()} concept${concept.tags.length ? ` · #${concept.tags.join(" #")}` : ""}`);
+    recordActivity("concept-created", `Created ${concept.title}`, `New ${concept.kind.toLowerCase()} concept${concept.tags.length ? ` · #${concept.tags.join(" #")}` : ""}`); void persistLocalGraphEdit();
     return concept;
   }, [allConcepts, recordActivity]);
   const updateConcept = useCallback((conceptId: string, changes: ConceptChanges) => {
     const current = concepts.find((concept) => concept.id === conceptId);
     setConcepts((currentConcepts) => updateConceptRecord(currentConcepts, conceptId, changes));
-    if (current) recordActivity("concept-updated", `Updated ${changes.title?.trim() || current.title}`, "Refined concept details, tags, sources, or working note.");
+    if (current) { recordActivity("concept-updated", `Updated ${changes.title?.trim() || current.title}`, "Refined concept details, tags, sources, or working note."); void persistLocalGraphEdit(); }
   }, [concepts, recordActivity]);
   const archiveConcept = useCallback((conceptId: string) => {
     const current = concepts.find((concept) => concept.id === conceptId);
     if (!current) return;
     const next = archiveConceptInState(concepts, archivedConcepts, conceptId);
     setConcepts(next.active); setArchivedConcepts(next.archived);
-    recordActivity("concept-archived", `Archived ${current.title}`, "Its relationship history is preserved and can be restored at any time.");
+    recordActivity("concept-archived", `Archived ${current.title}`, "Its relationship history is preserved and can be restored at any time."); void persistLocalGraphEdit();
   }, [concepts, archivedConcepts, recordActivity]);
   const restoreConcept = useCallback((conceptId: string) => {
     const current = archivedConcepts.find((concept) => concept.id === conceptId);
     if (!current) return;
     const next = restoreConceptInState(concepts, archivedConcepts, conceptId);
     setConcepts(next.active); setArchivedConcepts(next.archived);
-    recordActivity("concept-restored", `Restored ${current.title}`, "The concept and its preserved relationships are visible in the active graph again.");
+    recordActivity("concept-restored", `Restored ${current.title}`, "The concept and its preserved relationships are visible in the active graph again."); void persistLocalGraphEdit();
   }, [archivedConcepts, recordActivity]);
   const addRelationship = useCallback((relationship: NewRelationship) => {
     const source = concepts.find((concept) => concept.id === relationship.sourceId); const target = concepts.find((concept) => concept.id === relationship.targetId);
     const exists = allConnections.some((connection) => sameConceptPair(connection, relationship.sourceId, relationship.targetId));
     setAllConnections((current) => addConnection(current, relationship));
-    if (source && target && !exists && relationship.sourceId !== relationship.targetId && isRelationshipType(relationship.relationship)) recordActivity("relationship-created", `Linked ${source.title}`, `${relationship.relationship} ${target.title}`);
+    if (source && target && !exists && relationship.sourceId !== relationship.targetId && isRelationshipType(relationship.relationship)) { recordActivity("relationship-created", `Linked ${source.title}`, `${relationship.relationship} ${target.title}`); void persistLocalGraphEdit(); }
   }, [concepts, allConnections, recordActivity]);
   const updateRelationship = useCallback((connectionId: string, changes: RelationshipChanges) => {
     const current = allConnections.find((connection) => connection.id === connectionId);
     setAllConnections((currentConnections) => updateConnection(currentConnections, connectionId, changes));
-    if (current) { const source = allConcepts.find((concept) => concept.id === current.sourceId)?.title ?? "Concept"; const target = allConcepts.find((concept) => concept.id === current.targetId)?.title ?? "concept"; recordActivity("relationship-updated", `Updated ${source} ↔ ${target}`, "Refined relationship type, strength, source, or written note."); }
+    if (current) { const source = allConcepts.find((concept) => concept.id === current.sourceId)?.title ?? "Concept"; const target = allConcepts.find((concept) => concept.id === current.targetId)?.title ?? "concept"; recordActivity("relationship-updated", `Updated ${source} ↔ ${target}`, "Refined relationship type, strength, source, or written note."); void persistLocalGraphEdit(); }
   }, [allConnections, allConcepts, recordActivity]);
-  const removeRelationship = useCallback((connectionId: string) => { const current = allConnections.find((connection) => connection.id === connectionId); setAllConnections((items) => removeConnection(items, connectionId)); if (current) recordActivity("relationship-removed", "Removed a relationship", "A local link was removed from the graph."); }, [allConnections, recordActivity]);
-  const replaceRelationships = useCallback((nextConnections: Connection[]) => { setAllConnections(normalizeConnections(nextConnections)); }, []);
-  const replaceGraph = useCallback((nextConcepts: Concept[], nextConnections: Connection[]) => { const split = splitArchivedConcepts(normalizeConcepts(nextConcepts)); setConcepts(split.active); setArchivedConcepts(split.archived); setAllConnections(normalizeConnections(nextConnections)); recordActivity("graph-imported", "Imported graph backup", `${nextConcepts.length} concepts and ${nextConnections.length} relationships are now available locally.`); }, [recordActivity]);
+  const removeRelationship = useCallback((connectionId: string) => { const current = allConnections.find((connection) => connection.id === connectionId); setAllConnections((items) => removeConnection(items, connectionId)); if (current) { recordActivity("relationship-removed", "Removed a relationship", "A local link was removed from the graph."); void persistLocalGraphEdit(); } }, [allConnections, recordActivity]);
+  const replaceRelationships = useCallback((nextConnections: Connection[]) => { setAllConnections(normalizeConnections(nextConnections)); void persistLocalGraphEdit(); }, []);
+  const replaceGraph = useCallback((nextConcepts: Concept[], nextConnections: Connection[]) => { const split = splitArchivedConcepts(normalizeConcepts(nextConcepts)); setConcepts(split.active); setArchivedConcepts(split.archived); setAllConnections(normalizeConnections(nextConnections)); recordActivity("graph-imported", "Imported graph backup", `${nextConcepts.length} concepts and ${nextConnections.length} relationships are now available locally.`); void persistLocalGraphEdit(); }, [recordActivity]);
   const loadDemoGraph = useCallback(() => { const demo = createDemoWorkspace(); setConcepts(normalizeConcepts(demo.concepts)); setArchivedConcepts([]); setAllConnections(normalizeConnections(demo.connections)); recordActivity("demo-loaded", "Loaded demo graph", "Added a sample graph for exploration on this device."); }, [recordActivity]);
   const clearWorkspace = useCallback(() => { setConcepts([]); setArchivedConcepts([]); setAllConnections([]); setActivity([]); }, []);
   const relationshipsFor = useCallback((conceptId: string) => getConnectionsForConcept(connections, conceptId, concepts), [connections, concepts]);

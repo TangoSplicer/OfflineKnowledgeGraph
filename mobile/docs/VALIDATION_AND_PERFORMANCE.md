@@ -1,24 +1,24 @@
 # Validation and Performance Profile
 
-This document describes the repeatable engineering checks for Offline Knowledge Graph. The quality gates are designed around the project’s local-first model: tests use deterministic local fixtures, while native interaction flows never need an account or a remote graph service.
+This document describes repeatable engineering checks for Offline Knowledge Graph. The quality gates are designed around the local-first model: tests use deterministic local fixtures, and native interaction flows do not require accounts or remote graph services.
 
 ## Pull-request verification
 
-The repository workflow at [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs on pull requests, protected-branch pushes, and manually dispatched workflow runs. The Android interaction job consumes the debug APK produced by the build job, so the flow suite exercises the artifact that CI actually built.
+The repository workflow at [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs on pull requests, protected-branch pushes, and manually dispatched workflow runs.
 
 | Gate | Scope | Expected evidence |
 |---|---|---|
 | Rust and FFI validation | Rust core and Common Lisp bridge | Release build and tests complete before mobile delivery checks. |
 | Lint and Expo configuration | Mobile source and resolved Expo config | Source quality warnings are visible and configuration resolves successfully. |
-| TypeScript and Vitest | Mobile domain logic, encryption, progress model, and workflows | `pnpm check` and the full deterministic Vitest suite pass. |
-| Android release APK | Expo prebuild plus Gradle | A release APK with bundled JavaScript and `armeabi-v7a`, `arm64-v8a`, and `x86_64` ABIs is attached as an artifact. |
-| Maestro Android flows | Installed release APK in an API 29 emulator | JUnit report and any captured interaction evidence are retained as CI artifacts. |
+| TypeScript and Vitest | Mobile domain logic, encryption, restore, progress, and workflows | `pnpm check` and the deterministic Vitest suite pass. |
+| Android release APK | Expo prebuild plus Gradle | A release APK with bundled JavaScript and supported ABIs is attached as an artifact. |
+| Maestro Android flows | Installed release APK in an API 29 emulator | JUnit report and captured interaction evidence are retained as CI artifacts. |
 
-The Maestro flows in [`mobile/.maestro`](../.maestro) clear local application state before every scenario. They cover the first-concept wizard, optional demo-graph navigation into Explore and its filters, and Library access from an empty workspace. See [`.maestro/README.md`](../.maestro/README.md) for local execution guidance.
+Protected export coverage verifies the complete ZIP package, authenticated passphrase encryption, wrong-passphrase rejection, ciphertext-tamper rejection, valid graph recovery, passphrase-strength feedback, and sensitive-action classification for protected sharing and restore.
 
 ## Reproducing mobile checks
 
-Run the following from the `mobile` directory when validating source changes locally. The first command resolves project configuration without exposing application secrets.
+Run the following from the `mobile` directory:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -28,28 +28,24 @@ pnpm check
 pnpm test -- --run
 ```
 
-Native flow validation requires an Android emulator or device plus an installed debug build. After installation, run `maestro test .maestro` from the mobile directory. The workflow automates this sequence on an Ubuntu hosted runner using an x86_64 Android emulator, avoiding dependence on constrained macOS runner capacity.
-
-The CI job installs the official Maestro CLI at pinned version `1.39.0` through the documented `MAESTRO_VERSION` installer interface, with retry handling for transient download errors. The job verifies the installed version before it starts an API 29 `x86_64` emulator on the Ubuntu runner with a 4 GiB RAM allocation and a 1 GiB heap. This removes the prior dependency on a third-party setup action and keeps the flow runner version reviewable.
+Native interaction validation requires an Android emulator or device plus an installed build. Run `maestro test .maestro` from the mobile directory after installation. The workflow automates the Android sequence on an Ubuntu hosted runner using an API 29 x86_64 emulator.
 
 ## Large-graph regression benchmarks
 
-[`tests/performance-benchmarks.test.ts`](../tests/performance-benchmarks.test.ts) uses deterministic but representative record shapes with tags, summaries, notes, evidence-confidence values, and six directed relationships per concept. The suite validates the real `encryptCompleteGraph`, `graphPositionFor`, and `filterExploreConnections` code paths rather than using mock implementation timing.
+[`tests/performance-benchmarks.test.ts`](../tests/performance-benchmarks.test.ts) uses deterministic record shapes with tags, summaries, notes, evidence-confidence values, and directed relationships. It validates real encryption, layout, and filtering paths rather than mock timings.
 
-| Scenario | Fixture | Regression limit | Observed development-run result |
-|---|---:|---:|---:|
-| Complete encryption | 100 concepts and 600 relationships | Under 3,000 ms | 171.1 ms |
-| Complete encryption | 500 concepts and 3,000 relationships | Under 5,000 ms | 241.6 ms |
-| Complete encryption | 1,000 concepts and 6,000 relationships | Under 8,000 ms | 384.3 ms |
-| Layout preparation | 1,000 concepts per supported layout | Under 150 ms per layout | 0.2–0.9 ms |
-| Explore relationship filters | Three filters across 6,000 relationships | Under 500 ms total | 1.2 ms |
+| Scenario | Fixture | Regression limit |
+|---|---:|---:|
+| Complete encryption | 100 concepts and 600 relationships | Under 3,000 ms |
+| Complete encryption | 500 concepts and 3,000 relationships | Under 5,000 ms |
+| Complete encryption | 1,000 concepts and 6,000 relationships | Under 8,000 ms |
+| Layout preparation | 1,000 concepts per supported layout | Under 150 ms per layout |
+| Explore relationship filters | Three filters across 6,000 relationships | Under 500 ms total |
 
-> The observed measurements were captured in the managed development sandbox on 2026-08-16. They are regression indicators, not mobile-device service-level objectives. CI enforces the broader deterministic limits so normal runner variance does not cause flaky tests.
-
-Run the profile in isolation with:
+Run the performance profile in isolation with:
 
 ```bash
 pnpm test -- --run tests/performance-benchmarks.test.ts
 ```
 
-The suite emits concise timing lines for each encryption size, supported layout, and dense-filter pass. When changing encryption parameters, backup serialization, layout mathematics, or Explore filtering, keep the test’s correctness assertions and revise only an intentionally reviewed limit.
+When changing encryption parameters, backup serialization, protected-export format, layout mathematics, or Explore filtering, retain the test’s correctness assertions and revise a limit only through intentional review.

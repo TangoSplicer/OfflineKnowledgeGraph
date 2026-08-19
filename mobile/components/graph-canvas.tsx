@@ -8,6 +8,7 @@ import { visibleGraphConnections } from "../lib/graph-relationships";
 import { edgeOpacity, edgeStrokeWidth, strengthLabel } from "../lib/relationship-strength-visuals";
 import { graphPositionFor, type GraphLayout } from "../lib/graph-layouts";
 import { evidenceConfidenceColor, evidenceConfidenceLabel } from "../lib/relationship-evidence";
+import { graphNodeLabel } from "../lib/graph-node-labels";
 
 export type SelectedGraphEdge = {
   connection: Connection;
@@ -66,15 +67,15 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         const position = positions.get(concept.id) ?? graphPositionFor(concept.id, index, visibleConcepts.length, layout);
         const featured = concept.id === focusId;
         const nodeSize = (featured ? 110 : 72) * (compact ? 0.82 : 1);
-        return <GraphNode key={concept.id} label={concept.title.split(" ")[0]} color={concept.color} style={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2, left: position.x * canvasWidth - nodeSize / 2, top: position.y * canvasHeight - nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
+        return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
       })}
       {!compact && <View style={styles.legend}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={styles.legendText}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
     </View>
   );
 }
 
-function GraphNode({ label, color, style, featured = false, onPress }: { label: string; color: string; style: object; featured?: boolean; onPress: () => void }) {
-  return <Pressable onPress={onPress} style={({ pressed }) => [styles.node, featured && styles.featuredNode, { backgroundColor: color, shadowColor: color }, style, pressed && styles.nodePressed]}><Text style={[styles.nodeText, featured && styles.featuredText]}>{label}</Text></Pressable>;
+function GraphNode({ label, color, style, nodeStyle, compact = false, featured = false, onPress }: { label: string; color: string; style: object; nodeStyle: object; compact?: boolean; featured?: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Open ${label}`} onPress={onPress} style={({ pressed }) => [styles.nodeWrap, style, pressed && styles.nodePressed]}><View style={[styles.node, featured && styles.featuredNode, { backgroundColor: color, shadowColor: color }, nodeStyle]}><View style={styles.nodeCore} /></View><Text numberOfLines={2} style={[styles.nodeLabel, compact && styles.compactNodeLabel, featured && styles.featuredLabel]}>{label}</Text></Pressable>;
 }
 
 const styles = StyleSheet.create({
@@ -85,11 +86,14 @@ const styles = StyleSheet.create({
   edgeHitbox: { position: "absolute", height: 28, justifyContent: "center" },
   edge: { borderRadius: 4, alignSelf: "center" },
   edgePressed: { opacity: 0.58 },
-  node: { position: "absolute", alignItems: "center", justifyContent: "center", paddingHorizontal: 8, shadowOpacity: 0.34, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  nodeWrap: { position: "absolute", alignItems: "center" },
+  node: { alignItems: "center", justifyContent: "center", shadowOpacity: 0.34, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
+  nodeCore: { width: 10, height: 10, borderRadius: 5, backgroundColor: "rgba(8,16,29,0.66)" },
   featuredNode: { borderWidth: 2, borderColor: "rgba(255,255,255,0.35)" },
   nodePressed: { opacity: 0.78, transform: [{ scale: 0.96 }] },
-  nodeText: { color: "#08101D", textAlign: "center", fontSize: 10, fontWeight: "800", lineHeight: 13 },
-  featuredText: { color: "#FFFFFF", fontSize: 13, lineHeight: 17 },
+  nodeLabel: { minHeight: 30, marginTop: 5, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, overflow: "hidden", color: "#ECF2FB", backgroundColor: "rgba(10,16,31,0.9)", textAlign: "center", fontSize: 10, fontWeight: "800", lineHeight: 13 },
+  compactNodeLabel: { minHeight: 25, marginTop: 4, paddingHorizontal: 4, paddingVertical: 2, fontSize: 8.5, lineHeight: 11 },
+  featuredLabel: { color: "#FFFFFF", backgroundColor: "rgba(42,37,96,0.94)", fontSize: 11, lineHeight: 14 },
   legend: { position: "absolute", left: 15, bottom: 13, flexDirection: "row", alignItems: "center", borderRadius: 11, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: "rgba(11,16,32,0.84)" },
   legendLines: { width: 17, height: 13, justifyContent: "space-around", marginRight: 6 },
   legendLine: { width: 14, borderRadius: 3, backgroundColor: "#48D6E8" },

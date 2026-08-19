@@ -150,3 +150,34 @@
 - [x] Add native Android interaction-test workflow documentation and deterministic flow coverage
 - [x] Add large-graph encryption and rendering performance benchmarks
 - [x] Run full validation, update documentation, and save a checkpoint for verification and progress feedback
+- [x] Add a dedicated optional login screen for account-backed encrypted sync
+- [x] Add deterministic validation for the login-screen entry and local-first bypass
+- [x] Preserve a safe requested-feature return route through optional account login
+- [x] Test post-login return validation, fallback, and one-time consumption
+- [x] Add an accessible post-login completion transition with requested-feature feedback
+- [x] Test post-login transition labels, timing state, and safe route fallback
+- [x] Superseded: remove the sign-in action in favor of a fully local-first experience
+- [x] Superseded: remove destination-aware sign-in copy with account-flow removal
+- [x] Diagnose and repair the failing GitHub CI/CD workflow
+- [x] Validate the repaired pipeline locally and on GitHub
+- [x] Replace the Gemini-like mark with a distinct local knowledge-graph icon
+- [x] Reorganize Library into focused, less crowded local-first sections
+- [x] Remove account login, OAuth, and account-backed sync entry points
+- [x] Make graph node titles readable directly on the Explore canvas
+- [x] Add deterministic coverage and validate the local-first design refinement
+- [x] Optimize the local knowledge-map launcher assets below the checkpoint size limit
+- [x] Add a one-tap local JSON export action to the Home dashboard
+- [x] Test Home export action state and offline completion feedback
+- [x] Add a ZIP export containing complete JSON data and a graph image
+- [x] Persist and display the last successful local export date on Home
+- [x] Add an optional reminder after meaningful local graph edits
+- [x] Test expanded export files, status, and reminder logic
+- [x] Add optional passphrase protection to local ZIP export bundles
+- [x] Add secure password-entry feedback and no-recovery guidance
+- [x] Test encrypted export authentication, tamper rejection, and wrong-passphrase handling
+- [ ] Add in-app restore for passphrase-protected export archives
+- [ ] Require biometric confirmation before protected export sharing
+- [ ] Add accessible passphrase-strength feedback to protected export
+- [ ] Test protected restore, biometric gate, and passphrase-strength logic
+- [ ] Update local export and security documentation in the GitHub repository
+- [ ] Publish the completed verified update to GitHub

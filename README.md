@@ -1,29 +1,42 @@
 # Offline Knowledge Graph
 
-Offline Knowledge Graph combines a portable Rust core with language bridges and a local-first Expo mobile client. The repository keeps each runtime in a dedicated root directory so changes can be developed and validated independently.
+Offline Knowledge Graph combines a portable Rust core with language bridges and a professional local-first Expo mobile client. The mobile app is designed for personal knowledge work without mandatory accounts: concepts, relationships, search, graph exploration, local backup, and recovery remain under the device owner’s control.
 
 | Directory | Responsibility | How it is maintained |
-| --- | --- | --- |
+|---|---|---|
 | `rust-core/` | Native Rust knowledge-graph library and C-compatible FFI exports. | Updated when core graph behavior or FFI contracts change. |
 | `common-lisp-ffi/` | Common Lisp integration and FFI validation harness. | Updated when the Rust FFI interface changes. |
 | `clojure-ffi/` | Clojure bridge sources. | Updated when Clojure interop is extended. |
 | `mercury-ffi/` | Mercury bridge sources. | Updated when Mercury interop is extended. |
-| `mobile/` | Canonical Expo/React Native client, including onboarding, local graph storage, tests, and Android configuration. | Updated for all mobile UI and local graph features. |
-| `.github/workflows/ci.yml` | GitHub Actions pipeline. | Builds Rust, validates the Lisp bridge, and validates/builds the Android APK from `mobile/`. |
+| `mobile/` | Canonical Expo/React Native client, onboarding, local graph storage, protected export, recovery, tests, and Android configuration. | Updated for all mobile product and documentation changes. |
+| `.github/workflows/ci.yml` | GitHub Actions pipeline. | Validates the Rust core, FFI bridge, mobile source, and Android APK workflow. |
+
+## Local-first protection
+
+The mobile client’s Home dashboard creates a complete ZIP export containing graph JSON and an SVG graph image. Users can turn on passphrase protection to create an authenticated encrypted archive before sharing. The app never stores the passphrase; native devices request biometric or device-passcode confirmation before protected export sharing and restore. Protected archives are decrypted and validated locally through **Library → Restore protected export** before they can replace a graph.
+
+Read the canonical mobile documentation for the complete workflows:
+
+| Guide | Covers |
+|---|---|
+| [Mobile overview](mobile/README.md) | Product principles, local-first workspaces, and protected export format. |
+| [User tutorial](mobile/docs/USER_TUTORIAL.md) | Creating a graph, exporting, protected export, and restore. |
+| [Local protection and recovery](mobile/docs/ENCRYPTED_SYNC_TUTORIAL.md) | Passphrase, encryption, biometric confirmation, recovery, and nearby transfer boundaries. |
+| [Validation and performance](mobile/docs/VALIDATION_AND_PERFORMANCE.md) | Local commands, CI gates, protected-export tests, and benchmarks. |
 
 ## Build paths
 
-The mobile client is intentionally kept in **`mobile/`**. This is the only mobile directory that the CI/CD pipeline builds. The former duplicate `offline-knowledge-graph-mobile/` working directory has been consolidated into `mobile/`, so all future mobile changes should be made there before committing.
-
-The Rust and FFI directories remain at the repository root and are not replaced by mobile updates. They continue to be tested by the same CI/CD run alongside the Android APK job.
+The mobile client is intentionally kept in **`mobile/`**. This is the only mobile directory that CI/CD builds. The Rust and FFI directories remain at the repository root and continue to be validated alongside the Android workflow.
 
 ## Local validation
 
 ```bash
 cd mobile
 pnpm install --frozen-lockfile
+pnpm lint
+npx expo config --type public
 pnpm check
-pnpm test
+pnpm test -- --run
 ```
 
-The GitHub Actions workflow creates an Android debug APK from `mobile/android` and uploads it as the `offline-knowledge-graph-debug-apk` artifact.
+The GitHub Actions workflow assembles the Android artifact from `mobile/` and retains the corresponding interaction-test evidence.

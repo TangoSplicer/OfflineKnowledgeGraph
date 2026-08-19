@@ -1,42 +1,43 @@
 # Offline Knowledge Graph
 
-Offline Knowledge Graph is a local-first Expo mobile application for capturing concepts, connecting relationships, exploring evidence, and maintaining a personal knowledge graph without mandatory login.
+Offline Knowledge Graph is a **fully local-first** Expo mobile application for capturing concepts, connecting relationships, exploring evidence, and maintaining a personal knowledge graph. Core work, backup, restore, search, and graph exploration require **no account and no network connection**.
 
 ## Start here
 
-The in-app first-run wizard is the shortest path: create one concept, add a note, and make one optional connection. For the complete user journey, read [docs/USER_TUTORIAL.md](docs/USER_TUTORIAL.md).
+Create your first concept from Home, add a working note, and make an optional connection. The complete walkthrough is in [docs/USER_TUTORIAL.md](docs/USER_TUTORIAL.md).
 
-For cross-device protection, read [docs/ENCRYPTED_SYNC_TUTORIAL.md](docs/ENCRYPTED_SYNC_TUTORIAL.md). It explains QR and adjacent Wi-Fi/Bluetooth trusted-device pairing, direct password-protected bundle transfer, complete and selective encrypted sync, snapshot diff review and filters, automatic backup schedules, live quick-run progress, and notification boundaries.
+When the graph contains work you would not want to recreate, use Home’s **Complete Local Export**. It creates a ZIP containing the complete JSON graph and an SVG graph image. Turn on **Passphrase protection** to create a protected ZIP that can be restored only inside Offline Knowledge Graph with the same passphrase. Read [docs/ENCRYPTED_SYNC_TUTORIAL.md](docs/ENCRYPTED_SYNC_TUTORIAL.md) for the exact protection and recovery flow.
 
 ## Core product principles
 
 | Principle | Meaning |
 |---|---|
-| Local-first | Core capture, editing, search, graph exploration, and manual JSON backup work without login. |
-| User-held encryption | Sync passphrases remain with the user and are used on-device. |
-| Explicit recovery | Conflicts, imports, peer bundles, and snapshot rollbacks require review and a deliberate choice. |
+| Local-first | Capture, editing, search, graph exploration, export, and restore work from the device. |
+| User-held protection | Protected exports use a passphrase entered only for that action; the app never stores it. |
+| Explicit recovery | A protected archive is decrypted, inspected, and confirmed before it replaces a local graph. |
+| Biometric confirmation | Native devices request biometric or device-passcode confirmation before protected export sharing and protected restore. |
 | Transparent intelligence | Connection suggestions use inspectable local signals and require confirmation. |
-| Reviewable automation | Automatic backups are opt-in, pausable, bounded by revision checks, and visible in the audit trail. |
 
 ## Main workspaces
 
-The Home screen is the starting point. Its backup card shows the next scheduled run and provides an explicit, biometric-gated quick-run action. Explore provides graph search, filters, focus neighborhoods, layouts, paths, and written graph explanations. Library contains evidence review, capture, research, Knowledge Exchange with adjacent encrypted bundle transfer, sync audit, automatic backups, selective sync, version history with tag/kind filters, and trusted-device pairing.
+**Home** starts a new graph, shows graph activity, exports a complete local ZIP, displays the last successful export, and can remind you after meaningful edits. **Explore** provides searchable graph layouts, readable node titles, filters, focus neighborhoods, paths, and written graph explanations. **Library** keeps maintenance and recovery tools together, including **Restore protected export**, ordinary JSON import, local backup routines, nearby transfer, and Knowledge Exchange.
+
+## Protected export format
+
+A standard local export ZIP contains the graph JSON and an SVG image. A **protected** export ZIP contains an authenticated encrypted payload plus a recovery note; graph plaintext is not placed in the outer archive. The payload is derived from the user’s passphrase with scrypt and protected with XChaCha20-Poly1305 on-device. It is restored through **Library → Restore protected export**.
+
+> Keep the passphrase somewhere you control. It is never uploaded or saved by the app, so it cannot be recovered by Offline Knowledge Graph.
 
 ## Development
 
-This project uses Expo SDK 54, React Native 0.81, React 19, TypeScript, Expo Router, NativeWind, tRPC, Drizzle, and Vitest.
+This project uses Expo SDK 54, React Native 0.81, React 19, TypeScript, Expo Router, NativeWind, and Vitest.
 
 ```bash
 pnpm install
 pnpm check
-pnpm test
+pnpm lint
+pnpm test -- --run
 pnpm dev
 ```
 
-Pull requests run linting, Expo configuration validation, TypeScript, the complete Vitest suite, an Android debug build, and deterministic Android interaction flows. The native flows and reproducible large-graph benchmark limits are documented in [docs/VALIDATION_AND_PERFORMANCE.md](docs/VALIDATION_AND_PERFORMANCE.md).
-
-The web preview is useful for interface review. Camera scanning, biometric confirmation, local Wi-Fi discovery, Bluetooth LE transport, and direct bundle streaming are native development-build capabilities and should be validated in the Android build. The web pairing and exchange screens provide manual token, QR, and encrypted-file fallback paths for development.
-
-## Security notes
-
-Graph plaintext is encrypted before account-backed upload. Server-side records are opaque envelopes plus the minimum metadata needed for authenticated revision checks, device management, listing, and recovery controls. A QR or adjacent pairing token contains device identity metadata only. Direct bundle transport authenticates the short-lived local session with that token, while encryption still uses the separately shared passphrase. Never put a sync passphrase in a QR code, pairing payload, or ordinary message.
+Pull requests run linting, Expo configuration validation, TypeScript, the deterministic Vitest suite, Android APK assembly, and Android interaction flows. See [docs/VALIDATION_AND_PERFORMANCE.md](docs/VALIDATION_AND_PERFORMANCE.md) for the current validation matrix and performance limits.
