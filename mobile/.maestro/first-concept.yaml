@@ -8,5 +8,6 @@ appId: com.app.offlineknowledgegraphmobile
     timeout: 90000
 - tapOn: "Create your first concept"
 - assertVisible: "What idea do you want to keep close?"
-- tapOn: "Reading note"
-- assertVisible: "Reading note applied — customize every field below."
+- tapOn:
+    id: "first-concept-template-reading-note"
+- assertVisible: "A useful idea from my reading"

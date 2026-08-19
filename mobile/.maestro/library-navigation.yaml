@@ -7,6 +7,6 @@ appId: com.app.offlineknowledgegraphmobile
     visible: "Start with one idea."
     timeout: 90000
 - tapOn: "Library"
-- assertVisible: "Your graphs"
-- assertVisible: "Create concept"
-- assertVisible: "Load demo"
+- assertVisible: "Your thinking, in one place."
+- assertVisible: "Create idea"
+- assertVisible: "Load example"
