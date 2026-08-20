@@ -3,8 +3,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const LOCAL_EXPORT_STATUS_KEY = "offline-knowledge-graph.local-export-status.v1";
 export const EXPORT_REMINDER_EDIT_THRESHOLD = 5;
 export const LOCAL_EXPORT_HISTORY_LIMIT = 12;
+export const LOCAL_EXPORT_HISTORY_RETENTION_OPTIONS = [3, 6, 12] as const;
 
 export type LocalExportFormat = "complete-zip" | "protected-zip";
+export type LocalExportHistoryFilter = "all" | LocalExportFormat;
+export type LocalExportHistoryRetention = (typeof LOCAL_EXPORT_HISTORY_RETENTION_OPTIONS)[number];
 export type LocalExportRecord = {
   format: LocalExportFormat;
   filename: string;
@@ -21,6 +24,7 @@ export type LocalExportStatus = {
   lastExportedAt: string | null;
   editsSinceLastExport: number;
   remindersEnabled: boolean;
+  historyRetention: LocalExportHistoryRetention;
   history: LocalExportHistoryEntry[];
 };
 
@@ -28,10 +32,15 @@ export const emptyLocalExportStatus = (): LocalExportStatus => ({
   lastExportedAt: null,
   editsSinceLastExport: 0,
   remindersEnabled: true,
+  historyRetention: LOCAL_EXPORT_HISTORY_LIMIT,
   history: [],
 });
 
-function normalizeLocalExportHistory(value: unknown): LocalExportHistoryEntry[] {
+export function normalizeLocalExportHistoryRetention(value: unknown): LocalExportHistoryRetention {
+  return typeof value === "number" && LOCAL_EXPORT_HISTORY_RETENTION_OPTIONS.includes(value as LocalExportHistoryRetention) ? value as LocalExportHistoryRetention : LOCAL_EXPORT_HISTORY_LIMIT;
+}
+
+function normalizeLocalExportHistory(value: unknown, limit = LOCAL_EXPORT_HISTORY_LIMIT): LocalExportHistoryEntry[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((entry, index) => {
     if (!entry || typeof entry !== "object") return [];
@@ -42,24 +51,40 @@ function normalizeLocalExportHistory(value: unknown): LocalExportHistoryEntry[] 
     const conceptCount = typeof candidate.conceptCount === "number" && Number.isFinite(candidate.conceptCount) ? Math.max(0, Math.floor(candidate.conceptCount)) : 0;
     const connectionCount = typeof candidate.connectionCount === "number" && Number.isFinite(candidate.connectionCount) ? Math.max(0, Math.floor(candidate.connectionCount)) : 0;
     return [{ id: typeof candidate.id === "string" && candidate.id ? candidate.id : `${candidate.exportedAt}-${index}`, exportedAt: candidate.exportedAt, format: candidate.format, filename: candidate.filename.trim(), conceptCount, connectionCount, verified: true as const }];
-  }).sort((left, right) => right.exportedAt.localeCompare(left.exportedAt)).slice(0, LOCAL_EXPORT_HISTORY_LIMIT);
+  }).sort((left, right) => right.exportedAt.localeCompare(left.exportedAt)).slice(0, limit);
 }
 
 export function normalizeLocalExportStatus(value: unknown): LocalExportStatus {
   if (!value || typeof value !== "object") return emptyLocalExportStatus();
   const candidate = value as Partial<LocalExportStatus>;
+  const historyRetention = normalizeLocalExportHistoryRetention(candidate.historyRetention);
   return {
     lastExportedAt: typeof candidate.lastExportedAt === "string" && !Number.isNaN(Date.parse(candidate.lastExportedAt)) ? candidate.lastExportedAt : null,
     editsSinceLastExport: typeof candidate.editsSinceLastExport === "number" && Number.isFinite(candidate.editsSinceLastExport) ? Math.max(0, Math.floor(candidate.editsSinceLastExport)) : 0,
     remindersEnabled: candidate.remindersEnabled !== false,
-    history: normalizeLocalExportHistory(candidate.history),
+    historyRetention,
+    history: normalizeLocalExportHistory(candidate.history, historyRetention),
   };
 }
 
 export function recordLocalExport(status: LocalExportStatus, exportedAt = new Date(), record: LocalExportRecord = { format: "complete-zip", filename: "offline-knowledge-graph-export.zip", conceptCount: 0, connectionCount: 0 }): LocalExportStatus {
   const exportedAtValue = exportedAt.toISOString();
   const entry: LocalExportHistoryEntry = { id: `${exportedAtValue}-${record.filename}`, exportedAt: exportedAtValue, format: record.format, filename: record.filename, conceptCount: Math.max(0, Math.floor(record.conceptCount)), connectionCount: Math.max(0, Math.floor(record.connectionCount)), verified: true };
-  return { ...status, lastExportedAt: exportedAtValue, editsSinceLastExport: 0, history: [entry, ...status.history.filter((item) => item.id !== entry.id)].slice(0, LOCAL_EXPORT_HISTORY_LIMIT) };
+  return { ...status, lastExportedAt: exportedAtValue, editsSinceLastExport: 0, history: [entry, ...status.history.filter((item) => item.id !== entry.id)].slice(0, status.historyRetention) };
+}
+
+export function setLocalExportHistoryRetention(status: LocalExportStatus, value: unknown): LocalExportStatus {
+  const historyRetention = normalizeLocalExportHistoryRetention(value);
+  return { ...status, historyRetention, history: status.history.slice(0, historyRetention) };
+}
+
+export function filterLocalExportHistory(history: LocalExportHistoryEntry[], query = "", format: LocalExportHistoryFilter = "all"): LocalExportHistoryEntry[] {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  return history.filter((entry) => {
+    const matchesFormat = format === "all" || entry.format === format;
+    const searchable = `${entry.filename} ${entry.format} ${entry.conceptCount} ${entry.connectionCount} ${entry.exportedAt}`.toLocaleLowerCase();
+    return matchesFormat && (!normalizedQuery || searchable.includes(normalizedQuery));
+  });
 }
 
 export function recordLocalGraphEdit(status: LocalExportStatus): LocalExportStatus {

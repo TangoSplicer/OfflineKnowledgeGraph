@@ -20,7 +20,7 @@ When the graph contains work you would not want to recreate, use Home’s **Comp
 
 ## Main workspaces
 
-**Home** starts a new graph, shows graph activity, exports a complete local ZIP, records bounded verified export metadata, and can remind you after meaningful edits. **Explore** provides searchable graph layouts, readable node titles, **All labels / Balanced / Minimal** density controls, filters, focus neighborhoods, paths, and written graph explanations. **Library** keeps maintenance and recovery tools together, including **Export history**, **Restore protected export**, ordinary JSON import, local backup routines, nearby transfer, and Knowledge Exchange.
+**Home** starts a new graph, shows graph activity, exports a complete local ZIP, records bounded verified export metadata, and can remind you after meaningful edits. **Explore** provides searchable graph layouts, readable node titles, **All labels / Balanced / Minimal** density controls, and a one-tap focused-label preview for dense maps. **Library** keeps maintenance and recovery tools together, including **Export history** with local retention, filename search, and protection filtering; **Restore protected export**; ordinary JSON import; local backup routines; nearby transfer; and Knowledge Exchange.
 
 ## Protected export format
 

@@ -25,11 +25,12 @@ type GraphCanvasProps = {
   onSelectEdge?: (edge: SelectedGraphEdge) => void;
   layout?: GraphLayout;
   labelDensity?: GraphLabelDensity;
+  focusedLabelPreview?: boolean;
 };
 
 type Position = { x: number; y: number };
 
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all" }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false }: GraphCanvasProps) {
   const canvasHeight = compact ? 250 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         const position = positions.get(concept.id) ?? graphPositionFor(concept.id, index, visibleConcepts.length, layout);
         const featured = concept.id === focusId;
         const nodeSize = (featured ? 110 : 72) * (compact ? 0.82 : 1);
-        return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} showLabel={shouldShowGraphNodeLabel(labelDensity, index, featured)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
+        return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} showLabel={shouldShowGraphNodeLabel(labelDensity, index, featured, focusedLabelPreview)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
       })}
       {!compact && <View style={styles.legend}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={styles.legendText}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
     </View>

@@ -44,7 +44,7 @@ Wrong passphrases, modified ciphertext, missing encrypted payloads, and malforme
 
 ## Export-history boundary
 
-The app stores up to twelve recent export records on the device. Each record contains the archive creation time, filename, format, concept count, and relationship count. **Verified** means the archive was successfully created on that device. It does not prove where a user saved or shared the file afterwards. Export history never contains an archive copy, graph plaintext, a passphrase, or a recovery hint.
+The app stores a user-selected 3, 6, or 12 recent export records on the device. Each record contains the archive creation time, filename, format, concept count, and relationship count. You can search the metadata and filter it to protected or complete ZIPs. **Verified** means the archive was successfully created on that device. It does not prove where a user saved or shared the file afterwards. Export history never contains an archive copy, graph plaintext, a passphrase, or a recovery hint.
 
 ## Biometric and device confirmation
 
@@ -59,4 +59,3 @@ Nearby pairing and local exchange are optional. Discovery tokens contain short-l
 Before restoring any archive, verify the expected filename and source, confirm that you know the correct passphrase, compare the verified concept and relationship counts with your expectations, make a fresh local export if the current graph matters, and confirm replacement only on the intended device.
 
 > There is no passphrase recovery path. If you lose the passphrase, the protected archive remains unreadable by design. A recovery hint can help you remember your own system, but it cannot recover a lost passphrase.
-

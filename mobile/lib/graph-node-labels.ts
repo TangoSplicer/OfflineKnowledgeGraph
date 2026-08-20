@@ -14,7 +14,8 @@ export function isGraphLabelDensity(value: unknown): value is GraphLabelDensity 
   return typeof value === "string" && graphLabelDensityOptions.some((option) => option.id === value);
 }
 
-export function shouldShowGraphNodeLabel(density: GraphLabelDensity, index: number, featured: boolean): boolean {
+export function shouldShowGraphNodeLabel(density: GraphLabelDensity, index: number, featured: boolean, focusedPreview = false): boolean {
+  if (focusedPreview) return featured;
   if (density === "all") return true;
   if (density === "balanced") return featured || index % 2 === 0;
   return featured || index === 0;

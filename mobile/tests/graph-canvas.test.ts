@@ -31,4 +31,10 @@ describe("live graph canvas data", () => {
     expect(shouldShowGraphNodeLabel("minimal", 0, false)).toBe(true);
     expect(shouldShowGraphNodeLabel("minimal", 2, false)).toBe(false);
   });
+
+  it("temporarily isolates the focused label without changing the saved density choice", () => {
+    expect(shouldShowGraphNodeLabel("all", 0, false, true)).toBe(false);
+    expect(shouldShowGraphNodeLabel("balanced", 1, true, true)).toBe(true);
+    expect(shouldShowGraphNodeLabel("minimal", 0, false, false)).toBe(true);
+  });
 });
