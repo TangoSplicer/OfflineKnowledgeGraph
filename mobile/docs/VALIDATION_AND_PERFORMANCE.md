@@ -8,13 +8,13 @@ The repository workflow at [`.github/workflows/ci.yml`](../../.github/workflows/
 
 | Gate | Scope | Expected evidence |
 |---|---|---|
-| Rust and FFI validation | Rust core and Common Lisp bridge | Release build and tests complete before mobile delivery checks. |
+| Rust and FFI validation | Rust core and Common Lisp bridge | Release build and tests complete before mobile delivery checks; SBCL installation uses the primary Ubuntu archive with bounded retries and a 20-minute job limit. |
 | Lint and Expo configuration | Mobile source and resolved Expo config | Source quality warnings are visible and configuration resolves successfully. |
 | TypeScript and Vitest | Mobile domain logic, encryption, restore, progress, and workflows | `pnpm check` and the deterministic Vitest suite pass. |
 | Android release APK | Expo prebuild plus Gradle | A release APK with bundled JavaScript and supported ABIs is attached as an artifact. |
 | Maestro Android flows | Installed release APK in an API 29 emulator | JUnit report and captured interaction evidence are retained as CI artifacts. |
 
-Protected export coverage verifies the complete ZIP package, authenticated passphrase encryption, wrong-passphrase rejection, ciphertext-tamper rejection, valid graph recovery, passphrase-strength feedback, and sensitive-action classification for protected sharing and restore.
+Protected export coverage verifies the complete ZIP package, authenticated passphrase encryption, non-secret recovery-hint validation, wrong-passphrase rejection, ciphertext-tamper rejection, valid graph recovery, passphrase-strength feedback, bounded verified export-history metadata, graph-label density selection, and sensitive-action classification for protected sharing and restore.
 
 ## Reproducing mobile checks
 

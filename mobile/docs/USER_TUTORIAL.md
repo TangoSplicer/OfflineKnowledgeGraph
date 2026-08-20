@@ -16,7 +16,7 @@ A demo graph is available only when you choose **Load demo graph**. It is option
 
 ## Explore the graph
 
-Use **Explore** to understand structure rather than edit one record. Search for concepts, filter by relationship type or tag, choose a layout, and use focus mode to inspect a one-, two-, or three-hop neighborhood. Node titles stay visible on the canvas; tap a node or link when you need its full detail.
+Use **Explore** to understand structure rather than edit one record. Search for concepts, filter by relationship type or tag, choose a layout, and use focus mode to inspect a one-, two-, or three-hop neighborhood. For larger maps, choose **All labels**, **Balanced**, or **Minimal** in the filter panel. Balanced keeps a representative set of titles visible; Minimal keeps the focused title, or one anchor, while every node remains tappable.
 
 Relationship details can include a note, evidence confidence, source URL, quotation, and both endpoints. The graph overview describes the current map in plain language.
 
@@ -30,6 +30,7 @@ Library keeps local maintenance and recovery work in focused sections.
 | Capture raw notes before promoting them | Capture Inbox |
 | Organize claims, sources, and open gaps | Research Questions |
 | Export a focused bundle or readable report | Knowledge Exchange |
+| Review locally created archive metadata | Export history |
 | Restore a passphrase-protected complete export | Restore protected export |
 | Import a standard complete graph backup | Local graph backup → Restore |
 | Share with a nearby device | Nearby device transfer |
@@ -44,7 +45,7 @@ Home’s **Complete Local Export** creates a ZIP containing:
 | Complete graph JSON | Concepts, relationships, notes, tags, sources, evidence, and archive state. |
 | SVG graph image | A readable visual map of the exported graph. |
 
-The Home card records the last successful local export and can remind you after five meaningful graph changes. You can turn these reminders off without disabling export.
+The Home card records the last successful local export and can remind you after five meaningful graph changes. **View verified history** opens a short local record of archive filename, protection type, graph counts, and creation time. The history keeps no graph copy, passphrase, or information about where a file was later shared. You can turn reminders off without disabling export.
 
 ## Protect an export with a passphrase
 
@@ -52,15 +53,16 @@ Turn on **Passphrase protection** in the Home export card when the graph should 
 
 1. Enter a passphrase of at least 12 characters and confirm it.
 2. Read the on-screen strength feedback. A longer phrase with more character variety is stronger.
-3. Choose **Export protected ZIP**.
-4. Confirm the native biometric or device-passcode prompt when it is available.
-5. Save or share the resulting ZIP, then communicate the passphrase separately through a trusted channel.
+3. Optionally add a **recovery hint** that helps you recognize the passphrase source. Never write the passphrase itself; the app will reject an exact match.
+4. Choose **Export protected ZIP**.
+5. Confirm the native biometric or device-passcode prompt when it is available.
+6. Save or share the resulting ZIP, then communicate the passphrase separately through a trusted channel.
 
 The graph plaintext is encrypted on this device before the protected ZIP is shared. The passphrase is not stored, sent, or recoverable. Keep it somewhere you control.
 
 ## Restore a protected export
 
-Open **Library → Restore protected export**. Enter the original passphrase and choose the protected ZIP. The app decrypts and validates it locally, then shows its concept and relationship counts before recovery.
+Open **Library → Restore protected export**. First choose the protected ZIP. If its creator added one, the app shows the non-secret recovery hint before you enter the original passphrase. The app decrypts and validates the archive locally, then shows its concept and relationship counts before recovery.
 
 > Confirming restore replaces the current graph on this device. Review the displayed counts, export your current graph first if it matters, and complete the device confirmation only when the selected archive is correct.
 

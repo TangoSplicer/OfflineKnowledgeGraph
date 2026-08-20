@@ -1,6 +1,6 @@
 # Offline Knowledge Graph
 
-Offline Knowledge Graph combines a portable Rust core with language bridges and a professional local-first Expo mobile client. The mobile app is designed for personal knowledge work without mandatory accounts: concepts, relationships, search, graph exploration, local backup, and recovery remain under the device owner’s control.
+Offline Knowledge Graph combines a portable Rust core with language bridges and a local-first Expo mobile client. The mobile app is designed for personal knowledge work without mandatory accounts: concepts, relationships, search, graph exploration, local backup, and recovery remain under the device owner’s control.
 
 | Directory | Responsibility | How it is maintained |
 |---|---|---|
@@ -13,7 +13,9 @@ Offline Knowledge Graph combines a portable Rust core with language bridges and 
 
 ## Local-first protection
 
-The mobile client’s Home dashboard creates a complete ZIP export containing graph JSON and an SVG graph image. Users can turn on passphrase protection to create an authenticated encrypted archive before sharing. The app never stores the passphrase; native devices request biometric or device-passcode confirmation before protected export sharing and restore. Protected archives are decrypted and validated locally through **Library → Restore protected export** before they can replace a graph.
+The mobile client’s Home dashboard creates a complete ZIP export containing graph JSON and an SVG graph image. Users can turn on passphrase protection to create an authenticated encrypted archive before sharing. The app never stores the passphrase; native devices request biometric or device-passcode confirmation before protected export sharing and restore. An optional **non-secret recovery hint** can travel with a protected archive, but it is rejected if it matches the passphrase. Protected archives are decrypted and validated locally through **Library → Restore protected export** before they can replace a graph.
+
+The app also retains a short, device-local **export history** containing only archive metadata: creation time, filename, protection type, and graph counts. It does not retain an export copy, a passphrase, or sharing destinations. Explore includes **All labels**, **Balanced**, and **Minimal** display modes so larger local graphs remain readable without hiding node interaction.
 
 Read the canonical mobile documentation for the complete workflows:
 
@@ -21,8 +23,8 @@ Read the canonical mobile documentation for the complete workflows:
 |---|---|
 | [Mobile overview](mobile/README.md) | Product principles, local-first workspaces, and protected export format. |
 | [User tutorial](mobile/docs/USER_TUTORIAL.md) | Creating a graph, exporting, protected export, and restore. |
-| [Local protection and recovery](mobile/docs/ENCRYPTED_SYNC_TUTORIAL.md) | Passphrase, encryption, biometric confirmation, recovery, and nearby transfer boundaries. |
-| [Validation and performance](mobile/docs/VALIDATION_AND_PERFORMANCE.md) | Local commands, CI gates, protected-export tests, and benchmarks. |
+| [Local protection and recovery](mobile/docs/LOCAL_PROTECTION_AND_RECOVERY.md) | Passphrase, recovery hints, encryption, biometric confirmation, recovery, and nearby transfer boundaries. |
+| [Validation and performance](mobile/docs/VALIDATION_AND_PERFORMANCE.md) | Local commands, bounded CI gates, protected-export tests, and benchmarks. |
 
 ## Build paths
 
@@ -39,4 +41,4 @@ pnpm check
 pnpm test -- --run
 ```
 
-The GitHub Actions workflow assembles the Android artifact from `mobile/` and retains the corresponding interaction-test evidence.
+The GitHub Actions workflow assembles the Android **release** artifact from `mobile/`, retains the corresponding interaction-test evidence, and bounds Common Lisp dependency installation so a stalled hosted package mirror cannot block the pipeline indefinitely.

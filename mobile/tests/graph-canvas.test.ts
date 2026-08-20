@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { visibleGraphConnections } from "../lib/graph-relationships";
-import { graphNodeLabel } from "../lib/graph-node-labels";
+import { graphNodeLabel, isGraphLabelDensity, shouldShowGraphNodeLabel } from "../lib/graph-node-labels";
 import { concepts, connections } from "../lib/knowledge-data";
 
 describe("live graph canvas data", () => {
@@ -20,5 +20,15 @@ describe("live graph canvas data", () => {
     expect(graphNodeLabel("A very long relationship-centered research concept title", true)).toBe(
       "A very long relationship-…",
     );
+  });
+
+  it("offers deterministic label density reductions while preserving an accessible graph anchor", () => {
+    expect(isGraphLabelDensity("balanced")).toBe(true);
+    expect(isGraphLabelDensity("hidden")).toBe(false);
+    expect(shouldShowGraphNodeLabel("all", 3, false)).toBe(true);
+    expect(shouldShowGraphNodeLabel("balanced", 1, false)).toBe(false);
+    expect(shouldShowGraphNodeLabel("balanced", 3, true)).toBe(true);
+    expect(shouldShowGraphNodeLabel("minimal", 0, false)).toBe(true);
+    expect(shouldShowGraphNodeLabel("minimal", 2, false)).toBe(false);
   });
 });

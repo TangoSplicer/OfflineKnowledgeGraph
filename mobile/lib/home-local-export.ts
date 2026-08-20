@@ -5,6 +5,7 @@ import { decryptSyncValue, encryptSyncValue, type EncryptedFeedbackEnvelope } fr
 import { parseGraphBackup, type GraphBackup } from "./relationship-backup";
 
 export type HomeLocalExportState = "idle" | "exporting" | "complete" | "error";
+export type ExportRecoveryHintValidation = { valid: true; hint: string } | { valid: false; message: string };
 
 export function homeLocalExportFilename(exportedAt: Date): string {
   return `offline-knowledge-graph-${exportedAt.toISOString().slice(0, 10)}.json`;
@@ -48,10 +49,32 @@ export function validateExportPassphrase(passphrase: string, confirmation: strin
   return { valid: true };
 }
 
-export async function buildPasswordProtectedExportBundle(bundle: Uint8Array, originalFilename: string, passphrase: string): Promise<Uint8Array> {
+export function validateExportRecoveryHint(value: string, passphrase = ""): ExportRecoveryHintValidation {
+  const hint = value.normalize("NFKC").replace(/\s+/g, " ").trim();
+  if (hint.length > 120) return { valid: false, message: "Keep the recovery hint to 120 characters or fewer." };
+  if (hint && passphrase && hint === passphrase.normalize("NFKC").trim()) return { valid: false, message: "A recovery hint must never be the passphrase." };
+  return { valid: true, hint };
+}
+
+export async function buildPasswordProtectedExportBundle(bundle: Uint8Array, originalFilename: string, passphrase: string, recoveryHint = ""): Promise<Uint8Array> {
+  const hintValidation = validateExportRecoveryHint(recoveryHint, passphrase);
+  if (!hintValidation.valid) throw new Error(hintValidation.message);
   const encrypted = await encryptSyncValue<ProtectedExportPayload>({ schemaVersion: 1, type: "offline-knowledge-graph.zip", filename: originalFilename, archiveHex: bytesToHex(bundle) }, passphrase);
-  const readme = "This Offline Knowledge Graph export is protected with your passphrase. Open it in Offline Knowledge Graph and enter the same passphrase to restore it. The passphrase is not stored and cannot be recovered.";
-  return zipSync({ "offline-knowledge-graph.encrypted.json": strToU8(JSON.stringify(encrypted)), "README.txt": strToU8(readme) }, { level: 6 });
+  const readme = `This Offline Knowledge Graph export is protected with your passphrase. Open it in Offline Knowledge Graph and enter the same passphrase to restore it. The passphrase is not stored and cannot be recovered.${hintValidation.hint ? " A non-secret recovery hint is included separately." : ""}`;
+  const files: Record<string, Uint8Array> = { "offline-knowledge-graph.encrypted.json": strToU8(JSON.stringify(encrypted)), "README.txt": strToU8(readme) };
+  if (hintValidation.hint) files["offline-knowledge-graph.recovery-hint.txt"] = strToU8(hintValidation.hint);
+  return zipSync(files, { level: 6 });
+}
+
+export function readProtectedExportRecoveryHint(protectedBundle: Uint8Array): string | null {
+  try {
+    const hint = unzipSync(protectedBundle)["offline-knowledge-graph.recovery-hint.txt"];
+    if (!hint) return null;
+    const validation = validateExportRecoveryHint(strFromU8(hint));
+    return validation.valid && validation.hint ? validation.hint : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function decryptPasswordProtectedExportBundle(protectedBundle: Uint8Array, passphrase: string): Promise<{ filename: string; archive: Uint8Array }> {

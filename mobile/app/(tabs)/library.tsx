@@ -225,6 +225,12 @@ export default function LibraryScreen() {
             onPress={() => router.push("/restore-protected-export" as never)}
           />
           <LibraryRow
+            symbol="◷"
+            title="Export history"
+            detail="Review recent local archive records and their verified creation times."
+            onPress={() => router.push("/export-history" as never)}
+          />
+          <LibraryRow
             symbol="⌁"
             title="Nearby device transfer"
             detail="Pair a nearby device over local Wi-Fi, Bluetooth, or QR."

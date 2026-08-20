@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { strFromU8, unzipSync, zipSync } from "fflate";
 
-import { buildHomeLocalExportBundle, buildPasswordProtectedExportBundle, decryptPasswordProtectedExportBundle, decryptProtectedExportGraph, exportPassphraseStrength, homeLocalExportBundleFilename, homeLocalExportFilename, homeLocalExportMessage, homeLocalGraphImageFilename, validateExportPassphrase } from "../lib/home-local-export";
+import { buildHomeLocalExportBundle, buildPasswordProtectedExportBundle, decryptPasswordProtectedExportBundle, decryptProtectedExportGraph, exportPassphraseStrength, homeLocalExportBundleFilename, homeLocalExportFilename, homeLocalExportMessage, homeLocalGraphImageFilename, readProtectedExportRecoveryHint, validateExportPassphrase, validateExportRecoveryHint } from "../lib/home-local-export";
 import { createGraphBackup } from "../lib/relationship-backup";
 import { concepts, connections } from "../lib/knowledge-data";
 
@@ -64,5 +64,13 @@ describe("Home local export feedback", () => {
     expect(exportPassphraseStrength("short")).toMatchObject({ label: "Too short", score: 0 });
     expect(exportPassphraseStrength("local archive passphrase")).toMatchObject({ label: "Fair", score: 2 });
     expect(exportPassphraseStrength("Longer Local Archive Passphrase 2026!")).toMatchObject({ label: "Strong", score: 3 });
+  });
+
+  it("stores an optional non-secret recovery hint outside the encrypted payload without accepting the passphrase itself", async () => {
+    expect(validateExportRecoveryHint("my paper notebook", "a secure local passphrase")).toEqual({ valid: true, hint: "my paper notebook" });
+    expect(validateExportRecoveryHint("a secure local passphrase", "a secure local passphrase")).toMatchObject({ valid: false });
+    const archive = buildHomeLocalExportBundle("graph.json", '{"concepts":[]}', "graph.svg", "<svg></svg>");
+    const protectedBundle = await buildPasswordProtectedExportBundle(archive, "graph.zip", "a secure local passphrase", "my paper notebook");
+    expect(readProtectedExportRecoveryHint(protectedBundle)).toBe("my paper notebook");
   });
 });

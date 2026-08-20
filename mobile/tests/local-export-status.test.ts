@@ -27,4 +27,10 @@ describe("local export status", () => {
     expect(localExportStatusLabel(status, new Date("2026-08-18T15:00:00.000Z"))).toBe("Last export today");
     expect(localExportStatusLabel(status, new Date("2026-08-19T15:00:00.000Z"))).toBe("Last export 2026-08-18");
   });
+
+  it("keeps a bounded verified local record with export metadata", () => {
+    const exported = recordLocalExport(emptyLocalExportStatus(), new Date("2026-08-20T10:00:00.000Z"), { format: "protected-zip", filename: "offline-knowledge-graph-protected.zip", conceptCount: 8, connectionCount: 13 });
+    expect(exported.history).toHaveLength(1);
+    expect(exported.history[0]).toMatchObject({ format: "protected-zip", filename: "offline-knowledge-graph-protected.zip", conceptCount: 8, connectionCount: 13, verified: true, exportedAt: "2026-08-20T10:00:00.000Z" });
+  });
 });

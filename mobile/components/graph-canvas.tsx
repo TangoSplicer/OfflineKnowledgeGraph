@@ -8,7 +8,7 @@ import { visibleGraphConnections } from "../lib/graph-relationships";
 import { edgeOpacity, edgeStrokeWidth, strengthLabel } from "../lib/relationship-strength-visuals";
 import { graphPositionFor, type GraphLayout } from "../lib/graph-layouts";
 import { evidenceConfidenceColor, evidenceConfidenceLabel } from "../lib/relationship-evidence";
-import { graphNodeLabel } from "../lib/graph-node-labels";
+import { graphNodeLabel, shouldShowGraphNodeLabel, type GraphLabelDensity } from "../lib/graph-node-labels";
 
 export type SelectedGraphEdge = {
   connection: Connection;
@@ -24,11 +24,12 @@ type GraphCanvasProps = {
   onSelect: (id: string) => void;
   onSelectEdge?: (edge: SelectedGraphEdge) => void;
   layout?: GraphLayout;
+  labelDensity?: GraphLabelDensity;
 };
 
 type Position = { x: number; y: number };
 
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced" }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all" }: GraphCanvasProps) {
   const canvasHeight = compact ? 250 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -67,15 +68,15 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         const position = positions.get(concept.id) ?? graphPositionFor(concept.id, index, visibleConcepts.length, layout);
         const featured = concept.id === focusId;
         const nodeSize = (featured ? 110 : 72) * (compact ? 0.82 : 1);
-        return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
+        return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} showLabel={shouldShowGraphNodeLabel(labelDensity, index, featured)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
       })}
       {!compact && <View style={styles.legend}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={styles.legendText}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
     </View>
   );
 }
 
-function GraphNode({ label, color, style, nodeStyle, compact = false, featured = false, onPress }: { label: string; color: string; style: object; nodeStyle: object; compact?: boolean; featured?: boolean; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={`Open ${label}`} onPress={onPress} style={({ pressed }) => [styles.nodeWrap, style, pressed && styles.nodePressed]}><View style={[styles.node, featured && styles.featuredNode, { backgroundColor: color, shadowColor: color }, nodeStyle]}><View style={styles.nodeCore} /></View><Text numberOfLines={2} style={[styles.nodeLabel, compact && styles.compactNodeLabel, featured && styles.featuredLabel]}>{label}</Text></Pressable>;
+function GraphNode({ label, showLabel, color, style, nodeStyle, compact = false, featured = false, onPress }: { label: string; showLabel: boolean; color: string; style: object; nodeStyle: object; compact?: boolean; featured?: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Open ${label}`} onPress={onPress} style={({ pressed }) => [styles.nodeWrap, style, pressed && styles.nodePressed]}><View style={[styles.node, featured && styles.featuredNode, { backgroundColor: color, shadowColor: color }, nodeStyle]}><View style={styles.nodeCore} /></View>{showLabel ? <Text numberOfLines={2} style={[styles.nodeLabel, compact && styles.compactNodeLabel, featured && styles.featuredLabel]}>{label}</Text> : null}</Pressable>;
 }
 
 const styles = StyleSheet.create({
