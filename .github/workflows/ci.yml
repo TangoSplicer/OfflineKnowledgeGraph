@@ -18,6 +18,7 @@ jobs:
   build-and-test:
     name: Build Rust core and validate FFI bridge
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out source
@@ -34,8 +35,14 @@ jobs:
 
       - name: Install SBCL
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes sbcl
+          set -euo pipefail
+          # The Azure mirror on hosted runners can occasionally stall while
+          # refreshing package indexes. Use Ubuntu's primary archive and make
+          # the network bounds explicit so the FFI job never runs indefinitely.
+          sudo sed -i 's|azure.archive.ubuntu.com|archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
+          sudo timeout 4m apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout=30
+          sudo timeout 4m env DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends sbcl
+          sbcl --version
 
       - name: Fetch Common Lisp FFI dependencies
         working-directory: common-lisp-ffi
