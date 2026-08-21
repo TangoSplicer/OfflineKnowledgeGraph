@@ -4,10 +4,12 @@ export const LOCAL_EXPORT_STATUS_KEY = "offline-knowledge-graph.local-export-sta
 export const EXPORT_REMINDER_EDIT_THRESHOLD = 5;
 export const LOCAL_EXPORT_HISTORY_LIMIT = 12;
 export const LOCAL_EXPORT_HISTORY_RETENTION_OPTIONS = [3, 6, 12] as const;
+export const LOCAL_EXPORT_HISTORY_SORT_OPTIONS = ["recent", "concept-count", "relationship-count"] as const;
 
 export type LocalExportFormat = "complete-zip" | "protected-zip";
 export type LocalExportHistoryFilter = "all" | LocalExportFormat;
 export type LocalExportHistoryRetention = (typeof LOCAL_EXPORT_HISTORY_RETENTION_OPTIONS)[number];
+export type LocalExportHistorySort = (typeof LOCAL_EXPORT_HISTORY_SORT_OPTIONS)[number];
 export type LocalExportRecord = {
   format: LocalExportFormat;
   filename: string;
@@ -78,12 +80,23 @@ export function setLocalExportHistoryRetention(status: LocalExportStatus, value:
   return { ...status, historyRetention, history: status.history.slice(0, historyRetention) };
 }
 
+export function clearLocalExportHistory(status: LocalExportStatus): LocalExportStatus {
+  return { ...status, lastExportedAt: null, history: [] };
+}
+
 export function filterLocalExportHistory(history: LocalExportHistoryEntry[], query = "", format: LocalExportHistoryFilter = "all"): LocalExportHistoryEntry[] {
   const normalizedQuery = query.trim().toLocaleLowerCase();
   return history.filter((entry) => {
     const matchesFormat = format === "all" || entry.format === format;
     const searchable = `${entry.filename} ${entry.format} ${entry.conceptCount} ${entry.connectionCount} ${entry.exportedAt}`.toLocaleLowerCase();
     return matchesFormat && (!normalizedQuery || searchable.includes(normalizedQuery));
+  });
+}
+
+export function sortLocalExportHistory(history: LocalExportHistoryEntry[], sort: LocalExportHistorySort = "recent"): LocalExportHistoryEntry[] {
+  return [...history].sort((left, right) => {
+    const primary = sort === "concept-count" ? right.conceptCount - left.conceptCount : sort === "relationship-count" ? right.connectionCount - left.connectionCount : right.exportedAt.localeCompare(left.exportedAt);
+    return primary || right.exportedAt.localeCompare(left.exportedAt) || left.id.localeCompare(right.id);
   });
 }
 

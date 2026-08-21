@@ -1,6 +1,7 @@
 import type { Concept, Connection } from "./knowledge-data";
 
 export type FocusNeighborhood = { concepts: Concept[]; connections: Connection[]; conceptIds: Set<string>; hops: number };
+export const focusedNeighborhoodFitPreset = () => ({ layout: "radial" as const, hops: 1, focusedLabelPreview: false });
 
 export function focusNeighborhood(concepts: Concept[], connections: Connection[], focusId: string, requestedHops: number): FocusNeighborhood {
   const hops = Math.max(1, Math.min(3, Math.round(requestedHops)));

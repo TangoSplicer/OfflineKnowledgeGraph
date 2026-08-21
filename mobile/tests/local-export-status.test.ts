@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   EXPORT_REMINDER_EDIT_THRESHOLD,
   emptyLocalExportStatus,
+  clearLocalExportHistory,
   filterLocalExportHistory,
   localExportStatusLabel,
   recordLocalExport,
   recordLocalGraphEdit,
   setLocalExportHistoryRetention,
+  sortLocalExportHistory,
   shouldShowLocalExportReminder,
 } from "../lib/local-export-status";
 
@@ -44,5 +46,13 @@ describe("local export status", () => {
     expect(retained.historyRetention).toBe(3);
     expect(filterLocalExportHistory(retained.history, "private", "all").map((entry) => entry.filename)).toEqual(["private-research.zip"]);
     expect(filterLocalExportHistory(retained.history, "", "protected-zip")).toHaveLength(1);
+  });
+
+  it("clears only local export metadata and sorts records deterministically", () => {
+    const first = recordLocalExport(emptyLocalExportStatus(), new Date("2026-08-18T10:00:00.000Z"), { format: "complete-zip", filename: "few-concepts.zip", conceptCount: 2, connectionCount: 9 });
+    const second = recordLocalExport(first, new Date("2026-08-19T10:00:00.000Z"), { format: "protected-zip", filename: "many-concepts.zip", conceptCount: 8, connectionCount: 3 });
+    expect(sortLocalExportHistory(second.history, "concept-count").map((entry) => entry.filename)).toEqual(["many-concepts.zip", "few-concepts.zip"]);
+    expect(sortLocalExportHistory(second.history, "relationship-count").map((entry) => entry.filename)).toEqual(["few-concepts.zip", "many-concepts.zip"]);
+    expect(clearLocalExportHistory(second)).toMatchObject({ lastExportedAt: null, history: [], historyRetention: 12 });
   });
 });

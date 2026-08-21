@@ -16,7 +16,7 @@ A demo graph is available only when you choose **Load demo graph**. It is option
 
 ## Explore the graph
 
-Use **Explore** to understand structure rather than edit one record. Search for concepts, filter by relationship type or tag, choose a layout, and use focus mode to inspect a one-, two-, or three-hop neighborhood. For larger maps, choose **All labels**, **Balanced**, or **Minimal** in the filter panel. Balanced keeps a representative set of titles visible; Minimal keeps the focused title, or one anchor, while every node remains tappable. After choosing a focus idea, use **Preview focused label** below the canvas for a one-tap view that temporarily shows only that title without changing your saved density choice.
+Use **Explore** to understand structure rather than edit one record. Search for concepts, filter by relationship type or tag, choose a layout, and use focus mode to inspect a one-, two-, or three-hop neighborhood. For larger maps, choose **All labels**, **Balanced**, or **Minimal** in the filter panel. Balanced keeps a representative set of titles visible; Minimal keeps the focused title, or one anchor, while every node remains tappable. After choosing a focus idea, use **Preview focused label** below the canvas for a one-tap view that temporarily shows only that title without changing your saved density choice. Use **Fit focused neighborhood** to reset the selected idea to a compact radial one-hop view for quick local inspection.
 
 Relationship details can include a note, evidence confidence, source URL, quotation, and both endpoints. The graph overview describes the current map in plain language.
 
@@ -45,7 +45,7 @@ Home’s **Complete Local Export** creates a ZIP containing:
 | Complete graph JSON | Concepts, relationships, notes, tags, sources, evidence, and archive state. |
 | SVG graph image | A readable visual map of the exported graph. |
 
-The Home card records the last successful local export and can remind you after five meaningful graph changes. **View verified history** opens a short local record of archive filename, protection type, graph counts, and creation time. Search by filename, date, or recorded count; filter to protected or complete ZIPs; and choose whether this device retains the latest 3, 6, or 12 local records. The history keeps no graph copy, passphrase, recovery hint, or information about where a file was later shared. You can turn reminders off without disabling export.
+The Home card records the last successful local export and can remind you after five meaningful graph changes. **View verified history** opens a short local record of archive filename, protection type, graph counts, and creation time. Search by filename, date, or recorded count; filter to protected or complete ZIPs; sort by newest archive, most concepts, or most links; and choose whether this device retains the latest 3, 6, or 12 local records. When you no longer need the record, select **Clear local history** and then confirm; this removes only the on-device metadata, not any ZIP files you previously created or shared. The history keeps no graph copy, passphrase, recovery hint, or information about where a file was later shared. You can turn reminders off without disabling export.
 
 ## Protect an export with a passphrase
 
