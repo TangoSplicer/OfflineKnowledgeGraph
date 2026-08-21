@@ -4,7 +4,7 @@ Offline Knowledge Graph is a **fully local-first** Expo mobile application for c
 
 ## Start here
 
-Create your first concept from Home, add a working note, and make an optional connection. The complete walkthrough is in [docs/USER_TUTORIAL.md](docs/USER_TUTORIAL.md).
+Create your first concept from Home, add a working note, and make an optional connection. The complete walkthrough is in [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
 When the graph contains work you would not want to recreate, use Home’s **Complete Local Export**. It creates a ZIP containing the complete JSON graph and an SVG graph image. Turn on **Passphrase protection** to create a protected ZIP that can be restored only inside Offline Knowledge Graph with the same passphrase. You may add a non-secret recovery hint, which travels with the archive but is rejected if it matches the passphrase. Read [docs/LOCAL_PROTECTION_AND_RECOVERY.md](docs/LOCAL_PROTECTION_AND_RECOVERY.md) for the exact protection and recovery flow.
 

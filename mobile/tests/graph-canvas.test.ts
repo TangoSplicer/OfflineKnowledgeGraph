@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { visibleGraphConnections } from "../lib/graph-relationships";
 import { graphNodeLabel, isGraphLabelDensity, shouldShowGraphNodeLabel } from "../lib/graph-node-labels";
-import { clampGraphCanvasScale, clampGraphCanvasTranslation, graphCanvasTranslationBounds } from "../lib/graph-canvas-navigation";
+import { clampGraphCanvasScale, clampGraphCanvasTranslation, graphCanvasTranslationBounds, nextGraphCanvasViewportForKey } from "../lib/graph-canvas-navigation";
 import { concepts, connections } from "../lib/knowledge-data";
 
 describe("live graph canvas data", () => {
@@ -45,5 +45,14 @@ describe("live graph canvas data", () => {
     expect(graphCanvasTranslationBounds(2, 360, 330)).toEqual({ x: 180, y: 165 });
     expect(clampGraphCanvasTranslation({ x: 900, y: -900 }, 2, 360, 330)).toEqual({ x: 180, y: -165 });
     expect(clampGraphCanvasTranslation({ x: 40, y: -40 }, 1, 360, 330)).toEqual({ x: 0, y: 0 });
+  });
+
+  it("supports focused web keyboard navigation without allowing the viewport to leave the canvas bounds", () => {
+    const zoomed = nextGraphCanvasViewportForKey("+", { scale: 1, translation: { x: 0, y: 0 } }, 360, 330);
+    expect(zoomed).toEqual({ scale: 1.2, translation: { x: 0, y: 0 } });
+    const panned = nextGraphCanvasViewportForKey("ArrowRight", zoomed!, 360, 330);
+    expect(panned?.translation.x).toBeCloseTo(36, 8);
+    expect(nextGraphCanvasViewportForKey("0", panned!, 360, 330)).toEqual({ scale: 1, translation: { x: 0, y: 0 } });
+    expect(nextGraphCanvasViewportForKey("x", zoomed!, 360, 330)).toBeNull();
   });
 });

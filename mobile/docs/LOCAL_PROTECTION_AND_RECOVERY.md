@@ -44,7 +44,7 @@ Wrong passphrases, modified ciphertext, missing encrypted payloads, and malforme
 
 ## Export-history boundary
 
-The app stores a user-selected 3, 6, or 12 recent export records on the device. Each record contains the archive creation time, filename, format, concept count, and relationship count. You can search the metadata and filter it to protected or complete ZIPs. **Verified** means the archive was successfully created on that device. It does not prove where a user saved or shared the file afterwards. Export history never contains an archive copy, graph plaintext, a passphrase, or a recovery hint.
+The app stores a user-selected 3, 6, or 12 recent export records on the device. Each record contains the archive creation time, filename, format, concept count, and relationship count. You can search the metadata, filter it to protected or complete ZIPs, and sort records by newest archive, most concepts, or most links. **Clear local history** requires a second confirmation and removes only these device-local records; it never deletes an exported ZIP. **Verified** means the archive was successfully created on that device. It does not prove where a user saved or shared the file afterwards. Export history never contains an archive copy, graph plaintext, a passphrase, or a recovery hint.
 
 ## Biometric and device confirmation
 

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { concepts as seededConcepts, connections as seededConnections } from "../lib/knowledge-data";
 import type { Concept, Connection } from "../lib/knowledge-data";
@@ -11,7 +11,7 @@ import { edgeOpacity, edgeStrokeWidth, strengthLabel } from "../lib/relationship
 import { graphPositionFor, type GraphLayout } from "../lib/graph-layouts";
 import { evidenceConfidenceColor, evidenceConfidenceLabel } from "../lib/relationship-evidence";
 import { graphNodeLabel, shouldShowGraphNodeLabel, type GraphLabelDensity } from "../lib/graph-node-labels";
-import { clampGraphCanvasScale, clampGraphCanvasTranslation } from "../lib/graph-canvas-navigation";
+import { clampGraphCanvasScale, clampGraphCanvasTranslation, nextGraphCanvasViewportForKey } from "../lib/graph-canvas-navigation";
 
 export type SelectedGraphEdge = {
   connection: Connection;
@@ -30,11 +30,10 @@ type GraphCanvasProps = {
   labelDensity?: GraphLabelDensity;
   focusedLabelPreview?: boolean;
   resetViewToken?: number;
+  onZoomChange?: (percent: number) => void;
 };
 
-type Position = { x: number; y: number };
-
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0 }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0, onZoomChange }: GraphCanvasProps) {
   const canvasHeight = compact ? 250 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -44,17 +43,28 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
   const pinchStartScale = useSharedValue(1);
   const panStartX = useSharedValue(0);
   const panStartY = useSharedValue(0);
+  const lastReportedZoom = useSharedValue(100);
   const visibleConcepts = useMemo(() => compact ? concepts.filter((concept) => concept.id !== "donella-meadows") : concepts, [compact, concepts]);
   const visibleConnections = useMemo(() => visibleGraphConnections(concepts, connections, compact), [compact, concepts, connections]);
   const positions = useMemo(() => new Map(visibleConcepts.map((concept, index) => [concept.id, graphPositionFor(concept.id, index, visibleConcepts.length, layout)])), [visibleConcepts, layout]);
-  const notedConnections = visibleConnections.filter((connection) => connection.note.length > 0).length;
   const onLayout = (event: LayoutChangeEvent) => setCanvasWidth(event.nativeEvent.layout.width || 360);
+  const reportZoomLevel = useCallback((percent: number) => onZoomChange?.(percent), [onZoomChange]);
+  const reportZoomFromWorklet = (nextScale: number) => {
+    "worklet";
+    const percent = Math.round(nextScale * 100);
+    if (percent !== lastReportedZoom.value) {
+      lastReportedZoom.value = percent;
+      runOnJS(reportZoomLevel)(percent);
+    }
+  };
 
   useEffect(() => {
     scale.value = withTiming(1, { duration: 180 });
     translationX.value = withTiming(0, { duration: 180 });
     translationY.value = withTiming(0, { duration: 180 });
-  }, [resetViewToken, scale, translationX, translationY]);
+    lastReportedZoom.value = 100;
+    onZoomChange?.(100);
+  }, [lastReportedZoom, onZoomChange, resetViewToken, scale, translationX, translationY]);
 
   const panSceneStyle = useAnimatedStyle(() => ({ transform: [{ translateX: translationX.value }, { translateY: translationY.value }] }));
   const zoomSceneStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -66,6 +76,7 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
       scale.value = nextScale;
       translationX.value = nextTranslation.x;
       translationY.value = nextTranslation.y;
+      reportZoomFromWorklet(nextScale);
     })
     .onEnd(() => {
       const nextTranslation = clampGraphCanvasTranslation({ x: translationX.value, y: translationY.value }, scale.value, canvasWidth, canvasHeight);
@@ -86,7 +97,30 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
       translationX.value = withTiming(nextTranslation.x, { duration: 140 });
       translationY.value = withTiming(nextTranslation.y, { duration: 140 });
     });
-  const navigationGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+  const doubleTapResetGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .maxDistance(18)
+    .onEnd(() => {
+      scale.value = withTiming(1, { duration: 180 });
+      translationX.value = withTiming(0, { duration: 180 });
+      translationY.value = withTiming(0, { duration: 180 });
+      reportZoomFromWorklet(1);
+    });
+  const navigationGesture = Gesture.Simultaneous(pinchGesture, panGesture, doubleTapResetGesture);
+  const handleWebKeyDown = useCallback((event: any) => {
+    if (Platform.OS !== "web") return;
+    const key = event?.nativeEvent?.key ?? event?.key;
+    if (typeof key !== "string") return;
+    const viewport = nextGraphCanvasViewportForKey(key, { scale: scale.value, translation: { x: translationX.value, y: translationY.value } }, canvasWidth, canvasHeight);
+    if (!viewport) return;
+    event?.preventDefault?.();
+    scale.value = withTiming(viewport.scale, { duration: 140 });
+    translationX.value = withTiming(viewport.translation.x, { duration: 140 });
+    translationY.value = withTiming(viewport.translation.y, { duration: 140 });
+    lastReportedZoom.value = Math.round(viewport.scale * 100);
+    reportZoomLevel(lastReportedZoom.value);
+  }, [canvasHeight, canvasWidth, lastReportedZoom, reportZoomLevel, scale, translationX, translationY]);
+  const webKeyboardProps = Platform.OS === "web" ? ({ tabIndex: 0, onKeyDown: handleWebKeyDown } as any) : {};
 
   const selectEdge = (connection: Connection) => {
     setSelectedEdgeId(connection.id);
@@ -96,7 +130,7 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
   };
 
   return (
-    <View onLayout={onLayout} style={[styles.canvas, { height: canvasHeight }, compact && styles.compactCanvas]}>
+    <View {...webKeyboardProps} accessible={!compact} accessibilityLabel={compact ? undefined : "Interactive graph canvas. Pinch to zoom, drag to pan, double-tap to reset. On web, focus this canvas and use arrow keys, plus, minus, or zero."} onLayout={onLayout} style={[styles.canvas, { height: canvasHeight }, compact && styles.compactCanvas]}>
       <GestureDetector gesture={navigationGesture}>
         <Animated.View style={[styles.scene, panSceneStyle]}>
           <Animated.View style={[styles.scene, zoomSceneStyle]}>
