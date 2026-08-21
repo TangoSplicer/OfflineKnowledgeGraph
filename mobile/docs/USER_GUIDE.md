@@ -68,6 +68,8 @@ Library groups focused tools rather than returning you to a blank home state.
 
 Home’s **Complete Local Export** creates a ZIP with complete graph JSON and an SVG graph image. The card records the latest successful export and can remind you after meaningful graph edits. Use this export for your normal personal backup routine.
 
+Before your first successful export, Home displays a short **First local export** checklist. It confirms what the ZIP will contain, lets you turn on passphrase protection when needed, and provides the final standard or protected export action. The checklist disappears after a verified local export is recorded, while **View verified history** remains available for later review.
+
 Choose **View verified history** to see device-local metadata for recently prepared archives. The history includes filename, protection type, graph counts, and creation time only. Search by filename, date, or count; filter protected versus complete archives; sort by newest archive, most concepts, or most links; and retain 3, 6, or 12 records. **Clear local history** requires a second confirmation and removes only metadata, never the ZIP files themselves.
 
 ## 8. Protect sensitive exports with a passphrase
