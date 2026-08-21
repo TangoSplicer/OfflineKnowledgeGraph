@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { visibleGraphConnections } from "../lib/graph-relationships";
 import { graphNodeLabel, isGraphLabelDensity, shouldShowGraphNodeLabel } from "../lib/graph-node-labels";
+import { clampGraphCanvasScale, clampGraphCanvasTranslation, graphCanvasTranslationBounds } from "../lib/graph-canvas-navigation";
 import { concepts, connections } from "../lib/knowledge-data";
 
 describe("live graph canvas data", () => {
@@ -36,5 +37,13 @@ describe("live graph canvas data", () => {
     expect(shouldShowGraphNodeLabel("all", 0, false, true)).toBe(false);
     expect(shouldShowGraphNodeLabel("balanced", 1, true, true)).toBe(true);
     expect(shouldShowGraphNodeLabel("minimal", 0, false, false)).toBe(true);
+  });
+
+  it("keeps pinch zoom and pan within a predictable, resettable canvas viewport", () => {
+    expect(clampGraphCanvasScale(0.4)).toBe(1);
+    expect(clampGraphCanvasScale(5)).toBe(2.6);
+    expect(graphCanvasTranslationBounds(2, 360, 330)).toEqual({ x: 180, y: 165 });
+    expect(clampGraphCanvasTranslation({ x: 900, y: -900 }, 2, 360, 330)).toEqual({ x: 180, y: -165 });
+    expect(clampGraphCanvasTranslation({ x: 40, y: -40 }, 1, 360, 330)).toEqual({ x: 0, y: 0 });
   });
 });

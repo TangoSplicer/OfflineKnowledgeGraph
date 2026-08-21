@@ -33,6 +33,7 @@ export default function ExploreScreen() {
   const [layout, setLayout] = useState<GraphLayout>("balanced");
   const [labelDensity, setLabelDensity] = useState<GraphLabelDensity>("all");
   const [focusedLabelPreview, setFocusedLabelPreview] = useState(false);
+  const [canvasResetToken, setCanvasResetToken] = useState(0);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [focusHops, setFocusHops] = useState(1);
   const [query, setQuery] = useState("");
@@ -54,7 +55,7 @@ export default function ExploreScreen() {
 
   const recordSearch = useCallback((value: string) => setSearchHistory((current) => { const next = addSearchToHistory(current, value); void AsyncStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(next)); return next; }), []);
   const chooseLabelDensity = useCallback((value: GraphLabelDensity) => { setLabelDensity(value); void AsyncStorage.setItem(LABEL_DENSITY_KEY, value); }, []);
-  const fitFocusedNeighborhood = () => { const preset = focusedNeighborhoodFitPreset(); setLayout(preset.layout); setFocusHops(preset.hops); setFocusedLabelPreview(preset.focusedLabelPreview); setSelectedEdge(null); setExportStatus("Focused 1-hop neighborhood fitted to the canvas."); };
+  const fitFocusedNeighborhood = () => { const preset = focusedNeighborhoodFitPreset(); setLayout(preset.layout); setFocusHops(preset.hops); setFocusedLabelPreview(preset.focusedLabelPreview); setCanvasResetToken((current) => current + 1); setSelectedEdge(null); setExportStatus("Focused 1-hop neighborhood fitted to the canvas."); };
   const visibleConnections = useMemo(() => {
     const filtered = filterExploreConnections(connections, quickFilter, relationshipFilter);
     const matches = matchingConceptIds(concepts, query);
@@ -68,7 +69,7 @@ export default function ExploreScreen() {
   const availableTags = useMemo(() => allConceptTags(concepts), [concepts]);
   const clusters = useMemo(() => buildTagClusters(concepts, connections), [concepts, connections]);
 
-  const clearFilters = () => { setQuery(""); setQuickFilter("all"); setRelationshipFilter("all"); setActiveTag(null); setFocusId(null); setFocusHops(1); setFocusedLabelPreview(false); setSelectedEdge(null); setExportStatus(""); };
+  const clearFilters = () => { setQuery(""); setQuickFilter("all"); setRelationshipFilter("all"); setActiveTag(null); setFocusId(null); setFocusHops(1); setFocusedLabelPreview(false); setCanvasResetToken((current) => current + 1); setSelectedEdge(null); setExportStatus(""); };
   const dismissGuidance = () => { setShowGuidance(false); void AsyncStorage.setItem(EXPLORE_GUIDANCE_KEY, "dismissed"); };
   const chooseCluster = (tag: string) => { setActiveTag(tag); setLayout("radial"); setSelectedEdge(null); };
   const exportGraph = async (format: "svg" | "png") => {
@@ -97,7 +98,8 @@ export default function ExploreScreen() {
     <View style={styles.topline}><View><Text style={styles.eyebrow}>SYSTEMS PRACTICE</Text><Text style={styles.title}>Explore connections</Text></View><Pressable onPress={() => router.push("/search")} style={({ pressed }) => [styles.searchButton, pressed && styles.pressed]}><Text style={styles.searchIcon}>⌕</Text></Pressable></View>
     {showGuidance ? <ExploreGuidance onDismiss={dismissGuidance} /> : null}
     {clusters.length ? <ClusterStrip clusters={clusters} activeTag={activeTag} onSelect={chooseCluster} /> : null}
-    <View style={styles.canvasWrap}><ViewShot ref={graphRef} options={{ format: "png", quality: 1 }} style={styles.captureFrame}><GraphCanvas concepts={graphConcepts} connections={graphConnections} focusId={focusId ?? undefined} layout={layout} labelDensity={labelDensity} focusedLabelPreview={focusedLabelPreview && Boolean(focusId)} onSelect={(id) => router.push(`/concept/${id}`)} onSelectEdge={setSelectedEdge} /></ViewShot></View>
+    <View style={styles.canvasWrap}><ViewShot ref={graphRef} options={{ format: "png", quality: 1 }} style={styles.captureFrame}><GraphCanvas concepts={graphConcepts} connections={graphConnections} focusId={focusId ?? undefined} layout={layout} labelDensity={labelDensity} focusedLabelPreview={focusedLabelPreview && Boolean(focusId)} resetViewToken={canvasResetToken} onSelect={(id) => router.push(`/concept/${id}`)} onSelectEdge={setSelectedEdge} /></ViewShot></View>
+    <View style={focusedPreviewStyles.navigationPanel}><View style={focusedPreviewStyles.navigationCopy}><Text style={focusedPreviewStyles.title}>Navigate the canvas</Text><Text style={focusedPreviewStyles.detail}>Pinch outward to zoom in, then drag with one finger to pan around the graph.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Reset graph canvas view" accessibilityHint="Returns the graph to its default zoom and center position" onPress={() => setCanvasResetToken((current) => current + 1)} style={({ pressed }) => [focusedPreviewStyles.resetButton, pressed && styles.pressed]}><Text style={focusedPreviewStyles.resetButtonText}>Reset view</Text></Pressable></View>
     <Pressable accessibilityRole="switch" accessibilityState={{ checked: focusedLabelPreview && Boolean(focusId), disabled: !focusId }} disabled={!focusId} onPress={() => setFocusedLabelPreview((current) => !current)} style={({ pressed }) => [focusedPreviewStyles.toggle, focusedLabelPreview && Boolean(focusId) && focusedPreviewStyles.toggleActive, !focusId && styles.disabled, pressed && styles.pressed]}><View><Text style={focusedPreviewStyles.title}>{focusedLabelPreview && focusId ? "Focused-label preview on" : "Preview focused label"}</Text><Text style={focusedPreviewStyles.detail}>{focusId ? (focusedLabelPreview ? "Only the focused idea title is visible until you turn this off." : "Temporarily isolate the focused idea title on dense maps.") : "Choose an idea in Focus mode to preview its title."}</Text></View><Text style={focusedPreviewStyles.value}>{focusedLabelPreview && focusId ? "On" : "Off"}</Text></Pressable>
     <Pressable accessibilityRole="button" disabled={!focusId} onPress={fitFocusedNeighborhood} style={({ pressed }) => [focusedPreviewStyles.fitButton, !focusId && styles.disabled, pressed && styles.pressed]}><View><Text style={focusedPreviewStyles.title}>Fit focused neighborhood</Text><Text style={focusedPreviewStyles.detail}>{focusId ? "Use a radial 1-hop view sized for quick inspection." : "Choose an idea in Focus mode to fit its neighborhood."}</Text></View><Text style={focusedPreviewStyles.value}>Fit</Text></Pressable>
     {selectedEdge ? <EdgeDetails edge={selectedEdge} onClose={() => setSelectedEdge(null)} onManage={() => router.push({ pathname: "/concept/[id]/relationships", params: { id: selectedEdge.source.id } })} onOpenConcept={(id) => router.push(`/concept/${id}`)} /> : null}
@@ -118,6 +120,10 @@ const focusedPreviewStyles = StyleSheet.create({
   toggle: { minHeight: 55, paddingHorizontal: 13, borderRadius: 14, marginTop: 10, backgroundColor: "#151D34", borderWidth: 1, borderColor: "#32425F", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   toggleActive: { backgroundColor: "#27225A", borderColor: "#8C82FF" },
   fitButton: { minHeight: 55, paddingHorizontal: 13, borderRadius: 14, marginTop: 8, backgroundColor: "#152B39", borderWidth: 1, borderColor: "#3E7280", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  navigationPanel: { minHeight: 58, padding: 12, borderRadius: 14, marginTop: 8, backgroundColor: "#172035", borderWidth: 1, borderColor: "#344566", flexDirection: "row", alignItems: "center", gap: 10 },
+  navigationCopy: { flex: 1 },
+  resetButton: { minHeight: 34, borderRadius: 9, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", backgroundColor: "#263858", borderWidth: 1, borderColor: "#4B6B9B" },
+  resetButtonText: { color: "#DCEAFF", fontSize: 10, fontWeight: "900" },
   title: { color: "#E5E8FF", fontSize: 11, fontWeight: "900" },
   detail: { color: "#94A5C1", fontSize: 9, lineHeight: 13, maxWidth: 250, marginTop: 3 },
   value: { color: "#C5C0FF", fontSize: 10, fontWeight: "900" },

@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { LayoutChangeEvent } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { concepts as seededConcepts, connections as seededConnections } from "../lib/knowledge-data";
 import type { Concept, Connection } from "../lib/knowledge-data";
@@ -9,6 +11,7 @@ import { edgeOpacity, edgeStrokeWidth, strengthLabel } from "../lib/relationship
 import { graphPositionFor, type GraphLayout } from "../lib/graph-layouts";
 import { evidenceConfidenceColor, evidenceConfidenceLabel } from "../lib/relationship-evidence";
 import { graphNodeLabel, shouldShowGraphNodeLabel, type GraphLabelDensity } from "../lib/graph-node-labels";
+import { clampGraphCanvasScale, clampGraphCanvasTranslation } from "../lib/graph-canvas-navigation";
 
 export type SelectedGraphEdge = {
   connection: Connection;
@@ -26,19 +29,64 @@ type GraphCanvasProps = {
   layout?: GraphLayout;
   labelDensity?: GraphLabelDensity;
   focusedLabelPreview?: boolean;
+  resetViewToken?: number;
 };
 
 type Position = { x: number; y: number };
 
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0 }: GraphCanvasProps) {
   const canvasHeight = compact ? 250 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const scale = useSharedValue(1);
+  const translationX = useSharedValue(0);
+  const translationY = useSharedValue(0);
+  const pinchStartScale = useSharedValue(1);
+  const panStartX = useSharedValue(0);
+  const panStartY = useSharedValue(0);
   const visibleConcepts = useMemo(() => compact ? concepts.filter((concept) => concept.id !== "donella-meadows") : concepts, [compact, concepts]);
   const visibleConnections = useMemo(() => visibleGraphConnections(concepts, connections, compact), [compact, concepts, connections]);
   const positions = useMemo(() => new Map(visibleConcepts.map((concept, index) => [concept.id, graphPositionFor(concept.id, index, visibleConcepts.length, layout)])), [visibleConcepts, layout]);
   const notedConnections = visibleConnections.filter((connection) => connection.note.length > 0).length;
   const onLayout = (event: LayoutChangeEvent) => setCanvasWidth(event.nativeEvent.layout.width || 360);
+
+  useEffect(() => {
+    scale.value = withTiming(1, { duration: 180 });
+    translationX.value = withTiming(0, { duration: 180 });
+    translationY.value = withTiming(0, { duration: 180 });
+  }, [resetViewToken, scale, translationX, translationY]);
+
+  const panSceneStyle = useAnimatedStyle(() => ({ transform: [{ translateX: translationX.value }, { translateY: translationY.value }] }));
+  const zoomSceneStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const pinchGesture = Gesture.Pinch()
+    .onBegin(() => { pinchStartScale.value = scale.value; })
+    .onUpdate((event) => {
+      const nextScale = clampGraphCanvasScale(pinchStartScale.value * event.scale);
+      const nextTranslation = clampGraphCanvasTranslation({ x: translationX.value, y: translationY.value }, nextScale, canvasWidth, canvasHeight);
+      scale.value = nextScale;
+      translationX.value = nextTranslation.x;
+      translationY.value = nextTranslation.y;
+    })
+    .onEnd(() => {
+      const nextTranslation = clampGraphCanvasTranslation({ x: translationX.value, y: translationY.value }, scale.value, canvasWidth, canvasHeight);
+      translationX.value = withTiming(nextTranslation.x, { duration: 140 });
+      translationY.value = withTiming(nextTranslation.y, { duration: 140 });
+    });
+  const panGesture = Gesture.Pan()
+    .maxPointers(1)
+    .minDistance(7)
+    .onBegin(() => { panStartX.value = translationX.value; panStartY.value = translationY.value; })
+    .onUpdate((event) => {
+      const nextTranslation = clampGraphCanvasTranslation({ x: panStartX.value + event.translationX, y: panStartY.value + event.translationY }, scale.value, canvasWidth, canvasHeight);
+      translationX.value = nextTranslation.x;
+      translationY.value = nextTranslation.y;
+    })
+    .onEnd(() => {
+      const nextTranslation = clampGraphCanvasTranslation({ x: translationX.value, y: translationY.value }, scale.value, canvasWidth, canvasHeight);
+      translationX.value = withTiming(nextTranslation.x, { duration: 140 });
+      translationY.value = withTiming(nextTranslation.y, { duration: 140 });
+    });
+  const navigationGesture = Gesture.Simultaneous(pinchGesture, panGesture);
 
   const selectEdge = (connection: Connection) => {
     setSelectedEdgeId(connection.id);
@@ -49,6 +97,9 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
 
   return (
     <View onLayout={onLayout} style={[styles.canvas, { height: canvasHeight }, compact && styles.compactCanvas]}>
+      <GestureDetector gesture={navigationGesture}>
+        <Animated.View style={[styles.scene, panSceneStyle]}>
+          <Animated.View style={[styles.scene, zoomSceneStyle]}>
       <View style={[styles.orbit, compact && styles.compactOrbit]} />
       {visibleConnections.map((connection) => {
         const start = positions.get(connection.sourceId);
@@ -72,6 +123,9 @@ export function GraphCanvas({ compact = false, concepts = seededConcepts, connec
         return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} showLabel={shouldShowGraphNodeLabel(labelDensity, index, featured, focusedLabelPreview)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
       })}
       {!compact && <View style={styles.legend}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={styles.legendText}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
+          </Animated.View>
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 }
@@ -83,6 +137,7 @@ function GraphNode({ label, showLabel, color, style, nodeStyle, compact = false,
 const styles = StyleSheet.create({
   canvas: { position: "relative", overflow: "hidden", borderRadius: 28, backgroundColor: "#0E1528" },
   compactCanvas: { borderRadius: 24 },
+  scene: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
   orbit: { position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 1, borderColor: "rgba(124,108,255,0.22)", left: "18%", top: 47 },
   compactOrbit: { transform: [{ scale: 0.8 }], top: 21 },
   edgeHitbox: { position: "absolute", height: 28, justifyContent: "center" },

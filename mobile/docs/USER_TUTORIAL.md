@@ -18,6 +18,8 @@ A demo graph is available only when you choose **Load demo graph**. It is option
 
 Use **Explore** to understand structure rather than edit one record. Search for concepts, filter by relationship type or tag, choose a layout, and use focus mode to inspect a one-, two-, or three-hop neighborhood. For larger maps, choose **All labels**, **Balanced**, or **Minimal** in the filter panel. Balanced keeps a representative set of titles visible; Minimal keeps the focused title, or one anchor, while every node remains tappable. After choosing a focus idea, use **Preview focused label** below the canvas for a one-tap view that temporarily shows only that title without changing your saved density choice. Use **Fit focused neighborhood** to reset the selected idea to a compact radial one-hop view for quick local inspection.
 
+For detailed inspection, pinch outward anywhere on the full Explore canvas to zoom in, then use one finger to drag the magnified graph. Zoom and pan are bounded so the graph remains reachable. Select **Reset view** below the canvas to return to the default centered scale at any time. Node taps remain available when you do not drag.
+
 Relationship details can include a note, evidence confidence, source URL, quotation, and both endpoints. The graph overview describes the current map in plain language.
 
 ## Use the Library as the control center
