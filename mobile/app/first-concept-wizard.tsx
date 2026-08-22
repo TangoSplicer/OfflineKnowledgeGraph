@@ -351,7 +351,6 @@ function StepOne({
         onChangeText={setTitle}
         placeholder="e.g. Decision fatigue"
         placeholderTextColor="#71809A"
-        autoFocus
         style={styles.titleInput}
         returnKeyType="next"
       />
