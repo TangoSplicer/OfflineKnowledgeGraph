@@ -9,7 +9,7 @@ appId: com.app.offlineknowledgegraphmobile
 - tapOn:
     id: "home-create-first-concept"
 - extendedWaitUntil:
-    id: "first-concept-title-input"
+    visible: "What idea do you want to keep close?"
     timeout: 30000
 - pressKey: back
 - tapOn:
