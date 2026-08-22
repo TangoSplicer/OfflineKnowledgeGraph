@@ -24,16 +24,20 @@ export type LocalExportHistoryEntry = LocalExportRecord & {
 
 export type LocalExportStatus = {
   lastExportedAt: string | null;
+  lastRestoreTestedAt: string | null;
   editsSinceLastExport: number;
   remindersEnabled: boolean;
+  restoreTestRemindersEnabled: boolean;
   historyRetention: LocalExportHistoryRetention;
   history: LocalExportHistoryEntry[];
 };
 
 export const emptyLocalExportStatus = (): LocalExportStatus => ({
   lastExportedAt: null,
+  lastRestoreTestedAt: null,
   editsSinceLastExport: 0,
   remindersEnabled: true,
+  restoreTestRemindersEnabled: true,
   historyRetention: LOCAL_EXPORT_HISTORY_LIMIT,
   history: [],
 });
@@ -62,8 +66,10 @@ export function normalizeLocalExportStatus(value: unknown): LocalExportStatus {
   const historyRetention = normalizeLocalExportHistoryRetention(candidate.historyRetention);
   return {
     lastExportedAt: typeof candidate.lastExportedAt === "string" && !Number.isNaN(Date.parse(candidate.lastExportedAt)) ? candidate.lastExportedAt : null,
+    lastRestoreTestedAt: typeof candidate.lastRestoreTestedAt === "string" && !Number.isNaN(Date.parse(candidate.lastRestoreTestedAt)) ? candidate.lastRestoreTestedAt : null,
     editsSinceLastExport: typeof candidate.editsSinceLastExport === "number" && Number.isFinite(candidate.editsSinceLastExport) ? Math.max(0, Math.floor(candidate.editsSinceLastExport)) : 0,
     remindersEnabled: candidate.remindersEnabled !== false,
+    restoreTestRemindersEnabled: candidate.restoreTestRemindersEnabled !== false,
     historyRetention,
     history: normalizeLocalExportHistory(candidate.history, historyRetention),
   };
@@ -81,7 +87,11 @@ export function setLocalExportHistoryRetention(status: LocalExportStatus, value:
 }
 
 export function clearLocalExportHistory(status: LocalExportStatus): LocalExportStatus {
-  return { ...status, lastExportedAt: null, history: [] };
+  return { ...status, lastExportedAt: null, lastRestoreTestedAt: null, history: [] };
+}
+
+export function recordLocalRestoreTest(status: LocalExportStatus, completedAt = new Date()): LocalExportStatus {
+  return { ...status, lastRestoreTestedAt: completedAt.toISOString() };
 }
 
 export function filterLocalExportHistory(history: LocalExportHistoryEntry[], query = "", format: LocalExportHistoryFilter = "all"): LocalExportHistoryEntry[] {

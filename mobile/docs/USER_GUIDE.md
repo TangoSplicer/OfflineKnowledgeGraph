@@ -70,6 +70,10 @@ Home’s **Complete Local Export** creates a ZIP with complete graph JSON and an
 
 Before your first successful export, Home displays a short **First local export** checklist. It confirms what the ZIP will contain, lets you turn on passphrase protection when needed, and provides the final standard or protected export action. The checklist disappears after a verified local export is recorded, while **View verified history** remains available for later review.
 
+After an export is prepared, a **Local copy ready** sheet gives three practical prompts: move the ZIP out of a temporary download location, keep a second trusted copy, and plan a recovery test. Home also presents a **Backup health** card. It summarizes whether the newest verified local export is current, should be reviewed, is stale, or has not yet been created. This status is derived from device-local metadata only; it does not inspect files held by another app or storage provider.
+
+The **Restore confidence check** is optional and enabled by default after a local export exists. When it is due, choose **Open recovery tools** to review the available recovery paths. After completing a safe test on a copy you can afford to replace, select **I tested a restore** to record the check locally. You can turn these reminders off without affecting any export or backup file.
+
 Choose **View verified history** to see device-local metadata for recently prepared archives. The history includes filename, protection type, graph counts, and creation time only. Search by filename, date, or count; filter protected versus complete archives; sort by newest archive, most concepts, or most links; and retain 3, 6, or 12 records. **Clear local history** requires a second confirmation and removes only metadata, never the ZIP files themselves.
 
 ## 8. Protect sensitive exports with a passphrase
