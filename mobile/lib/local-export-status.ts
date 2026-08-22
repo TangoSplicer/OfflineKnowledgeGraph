@@ -10,6 +10,8 @@ export type LocalExportFormat = "complete-zip" | "protected-zip";
 export type LocalExportHistoryFilter = "all" | LocalExportFormat;
 export type LocalExportHistoryRetention = (typeof LOCAL_EXPORT_HISTORY_RETENTION_OPTIONS)[number];
 export type LocalExportHistorySort = (typeof LOCAL_EXPORT_HISTORY_SORT_OPTIONS)[number];
+export const LOCAL_EXPORT_DESTINATION_CHECKS = ["trusted-folder", "second-copy", "recovery-plan"] as const;
+export type LocalExportDestinationCheck = (typeof LOCAL_EXPORT_DESTINATION_CHECKS)[number];
 export type LocalExportRecord = {
   format: LocalExportFormat;
   filename: string;
@@ -28,6 +30,7 @@ export type LocalExportStatus = {
   editsSinceLastExport: number;
   remindersEnabled: boolean;
   restoreTestRemindersEnabled: boolean;
+  exportDestinationChecks: LocalExportDestinationCheck[];
   historyRetention: LocalExportHistoryRetention;
   history: LocalExportHistoryEntry[];
 };
@@ -38,6 +41,7 @@ export const emptyLocalExportStatus = (): LocalExportStatus => ({
   editsSinceLastExport: 0,
   remindersEnabled: true,
   restoreTestRemindersEnabled: true,
+  exportDestinationChecks: [],
   historyRetention: LOCAL_EXPORT_HISTORY_LIMIT,
   history: [],
 });
@@ -60,6 +64,11 @@ function normalizeLocalExportHistory(value: unknown, limit = LOCAL_EXPORT_HISTOR
   }).sort((left, right) => right.exportedAt.localeCompare(left.exportedAt)).slice(0, limit);
 }
 
+function normalizeLocalExportDestinationChecks(value: unknown): LocalExportDestinationCheck[] {
+  if (!Array.isArray(value)) return [];
+  return LOCAL_EXPORT_DESTINATION_CHECKS.filter((check) => value.includes(check));
+}
+
 export function normalizeLocalExportStatus(value: unknown): LocalExportStatus {
   if (!value || typeof value !== "object") return emptyLocalExportStatus();
   const candidate = value as Partial<LocalExportStatus>;
@@ -70,6 +79,7 @@ export function normalizeLocalExportStatus(value: unknown): LocalExportStatus {
     editsSinceLastExport: typeof candidate.editsSinceLastExport === "number" && Number.isFinite(candidate.editsSinceLastExport) ? Math.max(0, Math.floor(candidate.editsSinceLastExport)) : 0,
     remindersEnabled: candidate.remindersEnabled !== false,
     restoreTestRemindersEnabled: candidate.restoreTestRemindersEnabled !== false,
+    exportDestinationChecks: normalizeLocalExportDestinationChecks(candidate.exportDestinationChecks),
     historyRetention,
     history: normalizeLocalExportHistory(candidate.history, historyRetention),
   };
@@ -78,7 +88,7 @@ export function normalizeLocalExportStatus(value: unknown): LocalExportStatus {
 export function recordLocalExport(status: LocalExportStatus, exportedAt = new Date(), record: LocalExportRecord = { format: "complete-zip", filename: "offline-knowledge-graph-export.zip", conceptCount: 0, connectionCount: 0 }): LocalExportStatus {
   const exportedAtValue = exportedAt.toISOString();
   const entry: LocalExportHistoryEntry = { id: `${exportedAtValue}-${record.filename}`, exportedAt: exportedAtValue, format: record.format, filename: record.filename, conceptCount: Math.max(0, Math.floor(record.conceptCount)), connectionCount: Math.max(0, Math.floor(record.connectionCount)), verified: true };
-  return { ...status, lastExportedAt: exportedAtValue, editsSinceLastExport: 0, history: [entry, ...status.history.filter((item) => item.id !== entry.id)].slice(0, status.historyRetention) };
+  return { ...status, lastExportedAt: exportedAtValue, editsSinceLastExport: 0, exportDestinationChecks: [], history: [entry, ...status.history.filter((item) => item.id !== entry.id)].slice(0, status.historyRetention) };
 }
 
 export function setLocalExportHistoryRetention(status: LocalExportStatus, value: unknown): LocalExportStatus {
@@ -87,7 +97,14 @@ export function setLocalExportHistoryRetention(status: LocalExportStatus, value:
 }
 
 export function clearLocalExportHistory(status: LocalExportStatus): LocalExportStatus {
-  return { ...status, lastExportedAt: null, lastRestoreTestedAt: null, history: [] };
+  return { ...status, lastExportedAt: null, lastRestoreTestedAt: null, exportDestinationChecks: [], history: [] };
+}
+
+export function toggleLocalExportDestinationCheck(status: LocalExportStatus, check: LocalExportDestinationCheck): LocalExportStatus {
+  const exportDestinationChecks = status.exportDestinationChecks.includes(check)
+    ? status.exportDestinationChecks.filter((item) => item !== check)
+    : [...status.exportDestinationChecks, check];
+  return { ...status, exportDestinationChecks };
 }
 
 export function recordLocalRestoreTest(status: LocalExportStatus, completedAt = new Date()): LocalExportStatus {

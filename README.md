@@ -25,6 +25,7 @@ Read the canonical mobile documentation for the complete workflows:
 | [Detailed user guide](mobile/docs/USER_GUIDE.md) | Complete daily workflow: capture, relationships, Explore, navigation, exports, recovery, and exchange. |
 | [Local protection and recovery](mobile/docs/LOCAL_PROTECTION_AND_RECOVERY.md) | Passphrase, recovery hints, encryption, biometric confirmation, recovery, and nearby transfer boundaries. |
 | [Audience and use cases](mobile/docs/AUDIENCE_AND_USE_CASES.md) | Intended users, field applications, fit criteria, and product boundaries. |
+| [Printable workflow templates](mobile/docs/PRINTABLE_WORKFLOW_TEMPLATES.md) | Print-friendly research and technical workflow records for local-first graph work. |
 | [Validation and performance](mobile/docs/VALIDATION_AND_PERFORMANCE.md) | Local commands, bounded CI gates, protected-export tests, and benchmarks. |
 | [Changelog](CHANGELOG.md) | Published product, protection, navigation, CI, and documentation history. |
 | [Owner task list](USER_TASKS.md) | Practical setup, backup, recovery, maintenance, and release checklist. |

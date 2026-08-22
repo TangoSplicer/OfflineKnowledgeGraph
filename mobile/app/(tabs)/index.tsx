@@ -20,7 +20,8 @@ import { serializeGraphBackup } from "@/lib/relationship-backup";
 import { buildGraphSvg } from "@/lib/graph-export";
 import { firstExportChecklist, shouldShowFirstExportChecklist, type FirstExportChecklistStep } from "@/lib/first-export-checklist";
 import { restoreTestStatusLabel, shouldShowRestoreTestReminder, summarizeLocalBackupHealth } from "@/lib/export-confidence";
-import { emptyLocalExportStatus, loadLocalExportStatus, localExportStatusLabel, persistLocalExport, recordLocalRestoreTest, saveLocalExportStatus, shouldShowLocalExportReminder, type LocalExportStatus } from "@/lib/local-export-status";
+import { exportDestinationChecklist } from "@/lib/export-destination-checklist";
+import { emptyLocalExportStatus, loadLocalExportStatus, localExportStatusLabel, persistLocalExport, recordLocalRestoreTest, saveLocalExportStatus, shouldShowLocalExportReminder, toggleLocalExportDestinationCheck, type LocalExportDestinationCheck, type LocalExportStatus } from "@/lib/local-export-status";
 
 export default function TodayScreen() {
   const { concepts, connections, allConcepts, allConnections, activity, isReady, loadDemoGraph } = useRelationshipStore();
@@ -129,6 +130,13 @@ export default function TodayScreen() {
       return next;
     });
   }, []);
+  const toggleExportDestinationCheck = useCallback((check: LocalExportDestinationCheck) => {
+    setExportStatus((current) => {
+      const next = toggleLocalExportDestinationCheck(current, check);
+      void saveLocalExportStatus(next);
+      return next;
+    });
+  }, []);
   return (
     <ScreenContainer containerClassName="bg-background">
       <Stack.Screen options={{ headerShown: false }} />
@@ -145,7 +153,7 @@ export default function TodayScreen() {
         ListFooterComponent={hasConcepts ? <View style={styles.footerSpace} /> : null}
       />
       {hasConcepts ? <Pressable onPress={() => router.push("/capture")} style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}><Text style={styles.fabText}>＋</Text><Text style={styles.fabLabel}>New concept</Text></Pressable> : null}
-      <ExportSuccessSheet visible={isExportSuccessVisible} isProtected={exportStatus.history[0]?.format === "protected-zip"} onClose={() => setIsExportSuccessVisible(false)} onOpenHistory={() => { setIsExportSuccessVisible(false); router.push("/export-history" as never); }} />
+      <ExportSuccessSheet visible={isExportSuccessVisible} isProtected={exportStatus.history[0]?.format === "protected-zip"} destinationSteps={exportDestinationChecklist(exportStatus)} onToggleDestinationCheck={toggleExportDestinationCheck} onClose={() => setIsExportSuccessVisible(false)} onOpenHistory={() => { setIsExportSuccessVisible(false); router.push("/export-history" as never); }} />
     </ScreenContainer>
   );
 }
@@ -184,7 +192,7 @@ function FirstExportChecklist({ steps, isProtectedExport, onEnableProtection, on
 
 function BackupConfidenceCard({ health, restoreTestDue, restoreTestStatus, restoreTestRemindersEnabled, onExport, onOpenRecoveryTools, onToggleRestoreTestReminders, onMarkRestoreTestComplete }: { health: ReturnType<typeof summarizeLocalBackupHealth>; restoreTestDue: boolean; restoreTestStatus: string; restoreTestRemindersEnabled: boolean; onExport: () => void; onOpenRecoveryTools: () => void; onToggleRestoreTestReminders: () => void; onMarkRestoreTestComplete: () => void }) { const dotColor = health.level === "current" ? "#63D2A3" : health.level === "review" ? "#F0C06A" : "#F2A0A8"; return <View style={styles.backupConfidenceCard}><View style={styles.backupConfidenceHeader}><View style={[styles.backupConfidenceDot, { backgroundColor: dotColor }]} /><View style={styles.backupConfidenceCopy}><Text style={styles.backupConfidenceEyebrow}>BACKUP HEALTH</Text><Text style={styles.backupConfidenceTitle}>{health.title}</Text><Text style={styles.backupConfidenceDetail}>{health.detail}</Text></View></View>{health.needsExport ? <Pressable onPress={onExport} style={({ pressed }) => [styles.backupConfidenceAction, pressed && styles.pressed]}><Text style={styles.backupConfidenceActionText}>Create local export</Text></Pressable> : null}<View style={styles.restoreTestPanel}><View style={styles.restoreTestCopy}><Text style={styles.restoreTestTitle}>Restore confidence check</Text><Text style={styles.restoreTestDetail}>{restoreTestStatus}</Text></View><Pressable accessibilityRole="switch" accessibilityState={{ checked: restoreTestRemindersEnabled }} onPress={onToggleRestoreTestReminders} style={({ pressed }) => [styles.restoreTestToggle, pressed && styles.pressed]}><Text style={styles.restoreTestToggleText}>{restoreTestRemindersEnabled ? "On" : "Off"}</Text></Pressable></View>{restoreTestDue ? <View style={styles.restoreTestActions}><Pressable onPress={onOpenRecoveryTools} style={({ pressed }) => [styles.restoreTestAction, pressed && styles.pressed]}><Text style={styles.restoreTestActionText}>Open recovery tools</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Mark restore test complete after verifying a safe restore" onPress={onMarkRestoreTestComplete} style={({ pressed }) => [styles.restoreTestAction, styles.restoreTestActionPrimary, pressed && styles.pressed]}><Text style={styles.restoreTestActionText}>I tested a restore</Text></Pressable></View> : null}</View>; }
 
-function ExportSuccessSheet({ visible, isProtected, onClose, onOpenHistory }: { visible: boolean; isProtected: boolean; onClose: () => void; onOpenHistory: () => void }) { return <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}><View style={styles.exportSuccessOverlay}><View accessibilityRole="alert" style={styles.exportSuccessSheet}><Text style={styles.exportSuccessEyebrow}>LOCAL COPY READY</Text><Text style={styles.exportSuccessTitle}>{isProtected ? "Protected ZIP prepared" : "Your graph ZIP is prepared"}</Text><Text style={styles.exportSuccessDetail}>Save this ZIP somewhere you can reach outside this app, then keep a second copy in another trusted location.</Text><View style={styles.exportSuccessTip}><Text style={styles.exportSuccessTipNumber}>1</Text><Text style={styles.exportSuccessTipText}>Store the ZIP in a trusted folder or service, not only a temporary download location.</Text></View><View style={styles.exportSuccessTip}><Text style={styles.exportSuccessTipNumber}>2</Text><Text style={styles.exportSuccessTipText}>{isProtected ? "Keep the passphrase separately from the ZIP; the app cannot recover it." : "Consider a second copy before relying on a single device."}</Text></View><View style={styles.exportSuccessTip}><Text style={styles.exportSuccessTipNumber}>3</Text><Text style={styles.exportSuccessTipText}>Use Home’s restore confidence check to plan a safe recovery test later.</Text></View><Pressable onPress={onOpenHistory} style={({ pressed }) => [styles.exportSuccessPrimary, pressed && styles.pressed]}><Text style={styles.exportSuccessPrimaryText}>View verified history</Text></Pressable><Pressable onPress={onClose} style={({ pressed }) => [styles.exportSuccessDismiss, pressed && styles.pressed]}><Text style={styles.exportSuccessDismissText}>Done</Text></Pressable></View></View></Modal>; }
+function ExportSuccessSheet({ visible, isProtected, destinationSteps, onToggleDestinationCheck, onClose, onOpenHistory }: { visible: boolean; isProtected: boolean; destinationSteps: ReturnType<typeof exportDestinationChecklist>; onToggleDestinationCheck: (check: LocalExportDestinationCheck) => void; onClose: () => void; onOpenHistory: () => void }) { return <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}><View style={styles.exportSuccessOverlay}><View accessibilityRole="alert" style={styles.exportSuccessSheet}><Text style={styles.exportSuccessEyebrow}>LOCAL COPY READY</Text><Text style={styles.exportSuccessTitle}>{isProtected ? "Protected ZIP prepared" : "Your graph ZIP is prepared"}</Text><Text style={styles.exportSuccessDetail}>Use this short checklist after you choose the destination in the share sheet. It records only your confirmation; the app cannot inspect folders or external storage.</Text>{destinationSteps.map((step) => <Pressable key={step.id} accessibilityRole="checkbox" accessibilityState={{ checked: step.complete }} onPress={() => onToggleDestinationCheck(step.id)} style={({ pressed }) => [styles.destinationCheck, step.complete && styles.destinationCheckComplete, pressed && styles.pressed]}><View style={[styles.destinationCheckMark, step.complete && styles.destinationCheckMarkComplete]}><Text style={styles.destinationCheckMarkText}>{step.complete ? "✓" : ""}</Text></View><View style={styles.destinationCheckCopy}><Text style={styles.destinationCheckTitle}>{step.title}</Text><Text style={styles.destinationCheckDetail}>{step.detail}</Text></View></Pressable>)}<Text style={styles.destinationCheckBoundary}>These markers are private reminders on this device. A new export starts a fresh checklist.</Text><Pressable onPress={onOpenHistory} style={({ pressed }) => [styles.exportSuccessPrimary, pressed && styles.pressed]}><Text style={styles.exportSuccessPrimaryText}>View verified history</Text></Pressable><Pressable onPress={onClose} style={({ pressed }) => [styles.exportSuccessDismiss, pressed && styles.pressed]}><Text style={styles.exportSuccessDismissText}>Done</Text></Pressable></View></View></Modal>; }
 
 const styles = StyleSheet.create({
   content: { width: "100%", maxWidth: 480, alignSelf: "center", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 88 },
@@ -279,6 +287,15 @@ const styles = StyleSheet.create({
   exportSuccessEyebrow: { color: "#79E0E3", fontSize: 9, letterSpacing: 1.1, fontWeight: "900" },
   exportSuccessTitle: { color: "#F0F8FC", fontSize: 20, fontWeight: "900", marginTop: 6 },
   exportSuccessDetail: { color: "#B3CED9", fontSize: 12, lineHeight: 18, marginTop: 7 },
+  destinationCheck: { minHeight: 54, borderRadius: 12, borderWidth: 1, borderColor: "#385B76", backgroundColor: "#102238", padding: 10, marginTop: 9, flexDirection: "row", alignItems: "center" },
+  destinationCheckComplete: { backgroundColor: "#173842", borderColor: "#4C9295" },
+  destinationCheckMark: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: "#6492AC", alignItems: "center", justifyContent: "center", marginRight: 9 },
+  destinationCheckMarkComplete: { backgroundColor: "#347B7C", borderColor: "#83DCD0" },
+  destinationCheckMarkText: { color: "#E9FFFF", fontSize: 12, fontWeight: "900" },
+  destinationCheckCopy: { flex: 1 },
+  destinationCheckTitle: { color: "#DBF3F8", fontSize: 10, fontWeight: "900" },
+  destinationCheckDetail: { color: "#9FC2CE", fontSize: 9, lineHeight: 13, marginTop: 2 },
+  destinationCheckBoundary: { color: "#89AEBB", fontSize: 9, lineHeight: 13, marginTop: 10 },
   exportSuccessTip: { flexDirection: "row", marginTop: 11, alignItems: "flex-start" },
   exportSuccessTipNumber: { width: 19, height: 19, borderRadius: 10, backgroundColor: "#285467", color: "#DDFBFC", fontSize: 10, fontWeight: "900", textAlign: "center", lineHeight: 19, marginRight: 8 },
   exportSuccessTipText: { flex: 1, color: "#C4DCE4", fontSize: 10, lineHeight: 15 },

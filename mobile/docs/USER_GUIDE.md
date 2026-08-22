@@ -146,7 +146,15 @@ Before importing material from another person or device, review the selection an
 
 For a maintainer-facing checklist, use [`../../USER_TASKS.md`](../../USER_TASKS.md).
 
-## 13. Troubleshooting
+### Print-friendly role workflows
+
+The first-concept wizard includes **Research question**, **Technical decision**, and **Creative seed** starters in addition to general templates. They are optional pre-filled prompts; every field remains editable before creating a concept. Use the [printable workflow templates](PRINTABLE_WORKFLOW_TEMPLATES.md) for a research session plan, technical decision record, and storage checklist that can be copied into a notebook or printed from a Markdown viewer.
+
+## 13. Confirm the export destination after sharing
+
+After the device share sheet or browser download completes, the **Local copy ready** sheet provides three checkboxes: move the ZIP out of a temporary download area, keep a second trusted copy where appropriate, and plan a recovery check. These checkboxes record only your local confirmation. The app cannot inspect folders, cloud services, or other applications, so treat the checklist as a deliberate handoff rather than proof that a file exists elsewhere. Each newly prepared export starts a fresh destination checklist.
+
+## 14. Troubleshooting
 
 | Problem | Recommended response |
 |---|---|

@@ -31,6 +31,27 @@ export const firstConceptTemplates: FirstConceptTemplate[] = [
     kind: "Question",
     note: "I want to better understand: ",
   },
+  {
+    id: "research-question",
+    label: "Research question",
+    title: "A research question to investigate",
+    kind: "Question",
+    note: "I want to answer this by comparing claims, sources, and open questions: ",
+  },
+  {
+    id: "technical-decision",
+    label: "Technical decision",
+    title: "A system decision to clarify",
+    kind: "Method",
+    note: "The boundary, trade-off, dependency, or decision I need to make explicit: ",
+  },
+  {
+    id: "creative-seed",
+    label: "Creative seed",
+    title: "An idea I want to develop",
+    kind: "Theory",
+    note: "The motif, image, reference, or question I want to connect and develop: ",
+  },
 ];
 
 export const findFirstConceptTemplate = (id: string) =>

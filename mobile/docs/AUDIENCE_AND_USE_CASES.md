@@ -69,4 +69,4 @@ If your graph contains sensitive information, first consider whether it belongs 
 
 ## 7. Related guides
 
-The detailed operating instructions are in [`USER_GUIDE.md`](USER_GUIDE.md). For export protection and recovery boundaries, read [`LOCAL_PROTECTION_AND_RECOVERY.md`](LOCAL_PROTECTION_AND_RECOVERY.md). The maintainer’s recurring checklist is in [`../../USER_TASKS.md`](../../USER_TASKS.md).
+The detailed operating instructions are in [`USER_GUIDE.md`](USER_GUIDE.md). The role-specific [printable workflow templates](PRINTABLE_WORKFLOW_TEMPLATES.md) provide research and technical session records. For export protection and recovery boundaries, read [`LOCAL_PROTECTION_AND_RECOVERY.md`](LOCAL_PROTECTION_AND_RECOVERY.md). The maintainer’s recurring checklist is in [`../../USER_TASKS.md`](../../USER_TASKS.md).
