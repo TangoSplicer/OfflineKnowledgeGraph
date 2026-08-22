@@ -21,6 +21,7 @@ export type SelectedGraphEdge = {
 
 type GraphCanvasProps = {
   compact?: boolean;
+  wide?: boolean;
   concepts?: Concept[];
   connections?: Connection[];
   focusId?: string;
@@ -33,8 +34,8 @@ type GraphCanvasProps = {
   onZoomChange?: (percent: number) => void;
 };
 
-export function GraphCanvas({ compact = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0, onZoomChange }: GraphCanvasProps) {
-  const canvasHeight = compact ? 250 : 330;
+export function GraphCanvas({ compact = false, wide = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0, onZoomChange }: GraphCanvasProps) {
+  const canvasHeight = compact ? 250 : wide ? 480 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const scale = useSharedValue(1);

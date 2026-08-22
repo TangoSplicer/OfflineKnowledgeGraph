@@ -1,5 +1,5 @@
 import { Stack, router , useFocusEffect } from "expo-router";
-import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useCallback, useState } from "react";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
@@ -25,6 +25,8 @@ import { emptyLocalExportStatus, loadLocalExportStatus, localExportStatusLabel, 
 
 export default function TodayScreen() {
   const { concepts, connections, allConcepts, allConnections, activity, isReady, loadDemoGraph } = useRelationshipStore();
+  const { width } = useWindowDimensions();
+  const isWideWeb = Platform.OS === "web" && width >= 860;
   const [backupSummary, setBackupSummary] = useState<BackupStatusSummary | null>(null);
   const [quickRunState, setQuickRunState] = useState<"idle" | "running">("idle");
   const [quickRunMessage, setQuickRunMessage] = useState("");
@@ -143,7 +145,7 @@ export default function TodayScreen() {
       <FlatList
         data={hasConcepts ? activity : []}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, isWideWeb && styles.webContent]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           hasConcepts ? <PopulatedDashboard concepts={concepts.length} relationships={connections.length} backupSummary={backupSummary} onQuickRun={runQuickBackup} quickRunState={quickRunState} quickRunMessage={quickRunMessage} quickRunProgress={quickRunProgress} onExport={exportLocalGraph} exportState={exportState} exportMessage={exportMessage} exportStatus={exportStatus} onOpenHistory={() => router.push("/export-history" as never)} onOpenRecoveryTools={() => router.push("/(tabs)/library")} onToggleExportReminders={toggleExportReminders} onToggleRestoreTestReminders={toggleRestoreTestReminders} onMarkRestoreTestComplete={markRestoreTestComplete} isProtectedExport={isProtectedExport} exportPassphrase={exportPassphrase} exportPassphraseConfirmation={exportPassphraseConfirmation} exportRecoveryHint={exportRecoveryHint} onToggleExportProtection={toggleExportProtection} onChangeExportPassphrase={setExportPassphrase} onChangeExportPassphraseConfirmation={setExportPassphraseConfirmation} onChangeExportRecoveryHint={setExportRecoveryHint} /> : <EmptyWorkspaceWelcome isReady={isReady} onCreate={() => router.push("/first-concept-wizard")} onRestore={() => router.push("/restore-backup")} onLoadDemo={() => loadDemoGraph()} />
@@ -159,7 +161,7 @@ export default function TodayScreen() {
 }
 
 function EmptyWorkspaceWelcome({ isReady, onCreate, onRestore, onLoadDemo }: { isReady: boolean; onCreate: () => void; onRestore: () => void; onLoadDemo: () => void }) {
-  return <View style={styles.emptyContent}>
+  return <View style={[styles.emptyContent, Platform.OS === "web" && styles.webEmptyContent]}>
     <View style={styles.header}><View><Text style={styles.eyebrow}>OFFLINE KNOWLEDGE GRAPH</Text><Text style={styles.greeting}>Start with one idea.</Text></View><Pressable onPress={() => router.push("/search")} style={({ pressed }) => [styles.search, pressed && styles.pressed]}><Text style={styles.searchText}>⌕</Text></Pressable></View>
     <View style={styles.welcomeCard}><KnowledgeMapMark /><Text style={styles.welcomeEyebrow}>A CLEAR PLACE TO BEGIN</Text><Text style={styles.welcomeTitle}>Your workspace is empty.</Text><Text style={styles.welcomeText}>{isReady ? "Capture one concept, then add the connections that make it useful. Nothing is preloaded into your personal graph." : "Preparing your local workspace…"}</Text><Pressable testID="home-create-first-concept" disabled={!isReady} onPress={onCreate} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, !isReady && styles.disabled]}><Text style={styles.primaryButtonText}>Create your first concept</Text><Text style={styles.primaryButtonArrow}>→</Text></Pressable><Pressable disabled={!isReady} onPress={onRestore} style={({ pressed }) => [styles.restoreButton, pressed && styles.pressed, !isReady && styles.disabled]}><Text style={styles.restoreButtonText}>I have a backup</Text><Text style={styles.restoreArrow}>Restore JSON</Text></Pressable><Pressable disabled={!isReady} onPress={onLoadDemo} style={({ pressed }) => [styles.demoButton, pressed && styles.pressed, !isReady && styles.disabled]}><Text style={styles.demoButtonText}>Load demo graph</Text></Pressable></View>
     <View style={styles.startSteps}><Text style={styles.stepsTitle}>A simple starting path</Text><Step number="1" title="Capture an idea" detail="Give it a name and a short working note." /><Step number="2" title="Connect it" detail="Add relationships only when they help you think." /><Step number="3" title="Build from there" detail="Your graph grows with your own research." /></View><View style={styles.protectionGuide}><Text style={styles.protectionEyebrow}>KEEP IT YOURS</Text><Text style={styles.protectionTitle}>Local control, from the start.</Text><Text style={styles.protectionText}>Export a JSON backup, schedule protected local snapshots, or transfer selected bundles nearby. No account is required.</Text><Pressable onPress={() => router.push("/(tabs)/library")} style={({ pressed }) => [styles.protectionButton, pressed && styles.pressed]}><Text style={styles.protectionButtonText}>Open local tools</Text><Text style={styles.protectionArrow}>→</Text></Pressable></View>
@@ -196,7 +198,9 @@ function ExportSuccessSheet({ visible, isProtected, destinationSteps, onToggleDe
 
 const styles = StyleSheet.create({
   content: { width: "100%", maxWidth: 480, alignSelf: "center", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 88 },
+  webContent: { maxWidth: 1080, paddingHorizontal: 38, paddingTop: 34, paddingBottom: 48 },
   emptyContent: { paddingBottom: 30 },
+  webEmptyContent: { width: "100%", maxWidth: 720, alignSelf: "center", paddingTop: 18 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 23 },
   eyebrow: { color: "#48D6E8", fontSize: 10, fontWeight: "900", letterSpacing: 1.2, marginBottom: 7 },
   greeting: { color: "#F3F6FC", fontSize: 28, lineHeight: 35, fontWeight: "800", letterSpacing: -0.7, maxWidth: 270 },

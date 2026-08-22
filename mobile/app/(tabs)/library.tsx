@@ -1,4 +1,4 @@
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
@@ -17,6 +17,8 @@ type LibraryRowProps = {
 };
 
 export default function LibraryScreen() {
+  const { width } = useWindowDimensions();
+  const isWideWeb = Platform.OS === "web" && width >= 860;
   const [backupStatus, setBackupStatus] = useState(
     "Keep a portable JSON backup of your local graph.",
   );
@@ -35,7 +37,19 @@ export default function LibraryScreen() {
   const exportBackup = async () => {
     if (!isReady) return;
     if (Platform.OS === "web") {
-      setBackupStatus("Backup export is available in the installed Android app.");
+      const filename = `offline-knowledge-graph-${new Date().toISOString().slice(0, 10)}.json`;
+      const blob = new Blob([serializeGraphBackup(allConcepts, allConnections)], {
+        type: "application/json",
+      });
+      const objectUrl = URL.createObjectURL(blob);
+      const download = document.createElement("a");
+      download.href = objectUrl;
+      download.download = filename;
+      download.click();
+      URL.revokeObjectURL(objectUrl);
+      setBackupStatus(
+        `${allConcepts.length} concepts and ${allConnections.length} relationships downloaded as a local JSON backup.`,
+      );
       return;
     }
 
@@ -93,7 +107,7 @@ export default function LibraryScreen() {
   return (
     <ScreenContainer containerClassName="bg-background">
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, isWideWeb && styles.webContent]} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>LOCAL LIBRARY</Text>
         <Text style={styles.title}>Your thinking, in one place.</Text>
         <Text style={styles.subtitle}>
@@ -281,6 +295,7 @@ function LibraryRow({ title, detail, symbol, onPress, last = false }: LibraryRow
 
 const styles = StyleSheet.create({
   content: { width: "100%", maxWidth: 480, alignSelf: "center", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 112 },
+  webContent: { maxWidth: 980, paddingHorizontal: 38, paddingTop: 34, paddingBottom: 48 },
   eyebrow: { color: "#48D6E8", fontSize: 10, fontWeight: "900", letterSpacing: 1.2, marginBottom: 7 },
   title: { color: "#F3F6FC", fontSize: 29, lineHeight: 35, fontWeight: "800", letterSpacing: -0.7 },
   subtitle: { color: "#9CA9C4", fontSize: 14, lineHeight: 20, marginTop: 8, maxWidth: 335 },

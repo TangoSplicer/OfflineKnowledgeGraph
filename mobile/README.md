@@ -8,6 +8,8 @@ Create your first concept from Home, add a working note, and make an optional co
 
 When the graph contains work you would not want to recreate, use Home’s **Complete Local Export**. It creates a ZIP containing the complete JSON graph and an SVG graph image. Turn on **Passphrase protection** to create a protected ZIP that can be restored only inside Offline Knowledge Graph with the same passphrase. You may add a non-secret recovery hint, which travels with the archive but is rejected if it matches the passphrase. Read [docs/LOCAL_PROTECTION_AND_RECOVERY.md](docs/LOCAL_PROTECTION_AND_RECOVERY.md) for the exact protection and recovery flow.
 
+The same local-first workspace is available in a responsive browser build. Desktop browsers use a persistent work rail, wider Explore canvas, direct local JSON/ZIP downloads, and SVG download for the current graph view. Read [docs/WEB_RELEASE_PLAN.md](docs/WEB_RELEASE_PLAN.md) for browser boundaries and [docs/WEB_DEPLOYMENT.md](docs/WEB_DEPLOYMENT.md) for owner-controlled public hosting.
+
 ## Core product principles
 
 | Principle | Meaning |
@@ -38,6 +40,7 @@ pnpm check
 pnpm lint
 pnpm test -- --run
 pnpm dev
+npx expo export --platform web
 ```
 
 Pull requests run linting, Expo configuration validation, TypeScript, the deterministic Vitest suite, Android APK assembly, and Android interaction flows. See [docs/VALIDATION_AND_PERFORMANCE.md](docs/VALIDATION_AND_PERFORMANCE.md) for the current validation matrix and performance limits.
