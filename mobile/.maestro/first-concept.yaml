@@ -6,8 +6,11 @@ appId: com.app.offlineknowledgegraphmobile
 - extendedWaitUntil:
     visible: "Start with one idea."
     timeout: 90000
-- tapOn: "Create your first concept"
-- assertVisible: "What idea do you want to keep close?"
+- tapOn:
+    id: "home-create-first-concept"
+- extendedWaitUntil:
+    id: "first-concept-title-input"
+    timeout: 30000
 - pressKey: back
 - tapOn:
     id: "first-concept-template-reading-note"
