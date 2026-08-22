@@ -317,6 +317,14 @@ function StepOne({
         Start from a small template or write your own. Everything stays editable
         as the graph grows.
       </Text>
+      {selectedTemplate ? (
+        <View style={styles.templateApplied}>
+          <Text style={styles.templateAppliedMark}>✓</Text>
+          <Text style={styles.templateAppliedText}>
+            {selectedTemplate} applied — customize every field below.
+          </Text>
+        </View>
+      ) : null}
       <Text style={styles.templateLabel}>START WITH A TEMPLATE</Text>
       <View style={styles.templateRow}>
         {templates.map((template) => (
@@ -337,14 +345,6 @@ function StepOne({
           </Pressable>
         ))}
       </View>
-      {selectedTemplate ? (
-        <View style={styles.templateApplied}>
-          <Text style={styles.templateAppliedMark}>✓</Text>
-          <Text style={styles.templateAppliedText}>
-            {selectedTemplate} applied — customize every field below.
-          </Text>
-        </View>
-      ) : null}
       <TextInput
         testID="first-concept-title-input"
         value={title}
