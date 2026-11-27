@@ -34,11 +34,18 @@ import {
   validateWizardTitle,
   wizardCompletionStatus,
 } from "@/lib/first-concept-wizard-state";
+import {
+  defaultFirstRelationshipNote,
+  FIRST_RELATIONSHIP_WIZARD_KEY,
+  validateRelationshipTarget,
+} from "@/lib/first-relationship-state";
+import { useColors } from "@/hooks/use-colors";
 import { useRelationshipStore } from "@/lib/relationship-store";
 
 type WizardStep = 1 | 2 | 3;
 
 export default function FirstConceptWizardScreen() {
+  const colors = useColors();
   const { concepts, isReady, addConcept, addRelationship } =
     useRelationshipStore();
   const [step, setStep] = useState<WizardStep>(1);
@@ -50,6 +57,7 @@ export default function FirstConceptWizardScreen() {
   const [targetId, setTargetId] = useState<string | null>(null);
   const [relationship, setRelationship] =
     useState<RelationshipType>("supports");
+  const [relationshipNote, setRelationshipNote] = useState("");
   const [error, setError] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [customTemplates, setCustomTemplates] = useState<
@@ -118,6 +126,12 @@ export default function FirstConceptWizardScreen() {
       setError(validationError);
       return;
     }
+    // Already created (e.g. stepped back from step 3): don't create a duplicate.
+    if (createdConceptId) {
+      setError("");
+      setStep(3);
+      return;
+    }
     if (!isReady) return;
     const concept = addConcept({
       title: title.trim(),
@@ -127,10 +141,7 @@ export default function FirstConceptWizardScreen() {
     setCreatedConceptId(concept.id);
     setError("");
     void AsyncStorage.setItem(FIRST_CONCEPT_WIZARD_KEY, "concept-created");
-    router.replace({
-      pathname: "/first-relationship-wizard",
-      params: { id: concept.id },
-    });
+    setStep(3);
   };
 
   const saveCurrentAsTemplate = async () => {
@@ -152,6 +163,10 @@ export default function FirstConceptWizardScreen() {
 
   const finish = async (withConnection: boolean) => {
     if (!createdConceptId) return;
+    if (withConnection) {
+      const targetError = validateRelationshipTarget(targetId, companionTitle);
+      if (targetError) { setError(targetError); return; }
+    }
     let nextTargetId = targetId;
     if (withConnection && !nextTargetId && companionTitle.trim()) {
       const companion = addConcept({
@@ -167,12 +182,16 @@ export default function FirstConceptWizardScreen() {
         targetId: nextTargetId,
         relationship,
         strength: 3,
-        note: "First connection created during the guided start.",
+        note: relationshipNote.trim() || defaultFirstRelationshipNote(relationship),
       });
     }
     await AsyncStorage.setItem(
       FIRST_CONCEPT_WIZARD_KEY,
       wizardCompletionStatus(Boolean(withConnection && nextTargetId)),
+    );
+    await AsyncStorage.setItem(
+      FIRST_RELATIONSHIP_WIZARD_KEY,
+      withConnection && nextTargetId ? "completed" : "skipped",
     );
     router.replace(
       withConnection && nextTargetId
@@ -183,12 +202,14 @@ export default function FirstConceptWizardScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.screen}
+      style={[styles.screen, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.topbar}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={step === 1 ? "Go back" : "Go to previous step"}
           onPress={goBack}
           style={({ pressed }) => [
             styles.backButton,
@@ -202,6 +223,8 @@ export default function FirstConceptWizardScreen() {
           <Text style={styles.progressStep}>{progress}</Text>
         </View>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Skip the guided start"
           onPress={skip}
           style={({ pressed }) => [
             styles.skipButton,
@@ -252,6 +275,8 @@ export default function FirstConceptWizardScreen() {
             setCompanionTitle={setCompanionTitle}
             relationship={relationship}
             setRelationship={setRelationship}
+            relationshipNote={relationshipNote}
+            setRelationshipNote={setRelationshipNote}
           />
         ) : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -278,13 +303,15 @@ export default function FirstConceptWizardScreen() {
               onPress={() => finish(Boolean(targetId || companionTitle.trim()))}
             />
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Skip connecting this concept for now"
               onPress={() => finish(false)}
               style={({ pressed }) => [
                 styles.laterButton,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.laterText}>I’ll connect it later</Text>
+              <Text style={styles.laterText}>Skip</Text>
             </Pressable>
           </>
         ) : null}
@@ -310,10 +337,11 @@ function StepOne({
   templates: FirstConceptTemplate[];
   onApplyTemplate: (template: FirstConceptTemplate) => void;
 }) {
+  const colors = useColors();
   return (
     <View>
-      <Text style={styles.title}>What idea do you want to keep close?</Text>
-      <Text style={styles.description}>
+      <Text style={[styles.title, { color: colors.text }]}>What idea do you want to keep close?</Text>
+      <Text style={[styles.description, { color: colors.muted }]}>
         Start from a small template or write your own. Everything stays editable
         as the graph grows.
       </Text>
@@ -331,6 +359,8 @@ function StepOne({
           <Pressable
             key={template.id}
             testID={`first-concept-template-${template.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Use template ${template.label}`}
             onPress={() => onApplyTemplate(template)}
             style={({ pressed }) => [
               styles.templateChip,
@@ -359,6 +389,9 @@ function StepOne({
         {conceptKinds.map((value) => (
           <Pressable
             key={value}
+            accessibilityRole="button"
+            accessibilityLabel={`Kind ${value}`}
+            accessibilityState={{ selected: kind === value }}
             onPress={() => setKind(value)}
             style={({ pressed }) => [
               styles.chip,
@@ -395,10 +428,11 @@ function StepTwo({
   onSaveTemplate: () => void;
   templateMessage: string;
 }) {
+  const colors = useColors();
   return (
     <View>
-      <Text style={styles.title}>Why does {title || "this idea"} matter?</Text>
-      <Text style={styles.description}>
+      <Text style={[styles.title, { color: colors.text }]}>Why does {title || "this idea"} matter?</Text>
+      <Text style={[styles.description, { color: colors.muted }]}>
         Write one working sentence. You can always expand it later from the
         concept detail screen.
       </Text>
@@ -414,6 +448,8 @@ function StepTwo({
         style={styles.noteInput}
       />
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Save this as my template"
         onPress={onSaveTemplate}
         style={({ pressed }) => [
           styles.saveTemplateButton,
@@ -445,6 +481,8 @@ function StepThree({
   setCompanionTitle,
   relationship,
   setRelationship,
+  relationshipNote,
+  setRelationshipNote,
 }: {
   title: string;
   availableTargets: {
@@ -459,13 +497,17 @@ function StepThree({
   setCompanionTitle: (value: string) => void;
   relationship: RelationshipType;
   setRelationship: (value: RelationshipType) => void;
+  relationshipNote: string;
+  setRelationshipNote: (value: string) => void;
 }) {
+  const colors = useColors();
   return (
     <View>
-      <Text style={styles.title}>Give {title} a neighbor.</Text>
-      <Text style={styles.description}>
-        One thoughtful connection is enough to make a concept easier to find and
-        remember.
+      <Text style={[styles.title, { color: colors.text }]}>Give {title} a neighbor.</Text>
+      <Text style={[styles.description, { color: colors.muted }]}>
+        A relationship is a short explanation of how two ideas help each other
+        make sense. One thoughtful connection is enough to make a concept
+        easier to find and remember.
       </Text>
       {availableTargets.length ? (
         <>
@@ -474,6 +516,9 @@ function StepThree({
             {availableTargets.slice(0, 6).map((target) => (
               <Pressable
                 key={target.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Connect to ${target.title}`}
+                accessibilityState={{ selected: targetId === target.id }}
                 onPress={() => setTargetId(target.id)}
                 style={({ pressed }) => [
                   styles.target,
@@ -497,26 +542,27 @@ function StepThree({
             ))}
           </View>
         </>
-      ) : (
-        <>
-          <Text style={styles.fieldLabel}>CREATE A COMPANION CONCEPT</Text>
-          <TextInput
-            value={companionTitle}
-            onChangeText={(value) => {
-              setCompanionTitle(value);
-              setTargetId(null);
-            }}
-            placeholder="e.g. A question to explore next"
-            placeholderTextColor="#71809A"
-            style={styles.companionInput}
-          />
-        </>
-      )}
+      ) : null}
+      <Text style={styles.fieldLabel}>OR CREATE A COMPANION CONCEPT</Text>
+      <TextInput
+        value={companionTitle}
+        onChangeText={(value) => {
+          setCompanionTitle(value);
+          setTargetId(null);
+        }}
+        placeholder="e.g. A question to explore next"
+        placeholderTextColor="#71809A"
+        accessibilityLabel="Companion concept title"
+        style={styles.companionInput}
+      />
       <Text style={styles.fieldLabel}>HOW DOES IT RELATE?</Text>
       <View style={styles.chips}>
         {relationshipTypes.map((value) => (
           <Pressable
             key={value}
+            accessibilityRole="button"
+            accessibilityLabel={`Relationship type ${value}`}
+            accessibilityState={{ selected: relationship === value }}
             onPress={() => setRelationship(value)}
             style={({ pressed }) => [
               styles.chip,
@@ -535,6 +581,17 @@ function StepThree({
           </Pressable>
         ))}
       </View>
+      <Text style={styles.fieldLabel}>ADD A SHORT NOTE <Text style={styles.optional}>OPTIONAL</Text></Text>
+      <TextInput
+        value={relationshipNote}
+        onChangeText={setRelationshipNote}
+        placeholder="Why does this connection matter?"
+        placeholderTextColor="#71809A"
+        accessibilityLabel="Why this connection matters, optional"
+        multiline
+        textAlignVertical="top"
+        style={styles.noteInput}
+      />
       <HelperCard
         title="No pressure"
         detail="You can finish now and add a connection whenever the relationship becomes clearer. When your graph matters, Library is where you can export, pair a trusted device, and set up encrypted version history."
@@ -565,6 +622,8 @@ function PrimaryButton({
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
@@ -656,7 +715,7 @@ const styles = StyleSheet.create({
   },
   templateRow: { gap: 7 },
   templateChip: {
-    minHeight: 42,
+    minHeight: 44,
     borderRadius: 12,
     paddingHorizontal: 12,
     flexDirection: "row",
@@ -667,7 +726,7 @@ const styles = StyleSheet.create({
     borderColor: "#32435F",
   },
   customTemplateChip: { backgroundColor: "#16333B", borderColor: "#3C777E" },
-  templateText: { color: "#D9E2F0", fontSize: 12, fontWeight: "900" },
+  templateText: { color: "#D9E2F0", fontSize: 13, fontWeight: "900" },
   templateArrow: { color: "#A9A0FF", fontSize: 12, fontWeight: "800" },
   templateApplied: {
     minHeight: 38,
@@ -686,7 +745,8 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginRight: 7,
   },
-  templateAppliedText: { color: "#BFE8D6", fontSize: 11, fontWeight: "800" },
+  templateAppliedText: { color: "#BFE8D6", fontSize: 12, fontWeight: "800" },
+  optional: { color: "#8291AB" },
   titleInput: {
     height: 61,
     borderRadius: 16,
@@ -709,7 +769,7 @@ const styles = StyleSheet.create({
   },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   chip: {
-    minHeight: 37,
+    minHeight: 44,
     paddingHorizontal: 12,
     borderRadius: 11,
     justifyContent: "center",
@@ -718,7 +778,7 @@ const styles = StyleSheet.create({
     borderColor: "#31415F",
   },
   chipActive: { backgroundColor: "#332E75", borderColor: "#8B81FA" },
-  chipText: { color: "#AAB6C9", fontSize: 11, fontWeight: "800" },
+  chipText: { color: "#AAB6C9", fontSize: 13, fontWeight: "800" },
   chipTextActive: { color: "#F0EEFF" },
   noteInput: {
     minHeight: 166,
@@ -744,7 +804,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#3A777B",
   },
-  saveTemplateText: { color: "#BFE8D6", fontSize: 12, fontWeight: "900" },
+  saveTemplateText: { color: "#BFE8D6", fontSize: 13, fontWeight: "900" },
   saveTemplateArrow: { color: "#78DDBB", fontSize: 16 },
   templateMessage: {
     color: "#7BE0BE",
@@ -787,7 +847,7 @@ const styles = StyleSheet.create({
   helperTitle: { color: "#E7ECF7", fontSize: 12, fontWeight: "800" },
   helperDetail: {
     color: "#9CA9C4",
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 17,
     marginTop: 3,
   },
@@ -806,7 +866,7 @@ const styles = StyleSheet.create({
   targetDot: { width: 9, height: 9, borderRadius: 5, marginRight: 10 },
   targetText: { flex: 1, color: "#DDE4F0", fontSize: 13, fontWeight: "800" },
   targetTextActive: { color: "#FBFAFF" },
-  targetKind: { color: "#8795AF", fontSize: 10, fontWeight: "700" },
+  targetKind: { color: "#8795AF", fontSize: 12, fontWeight: "700" },
   companionInput: {
     height: 57,
     borderRadius: 15,
@@ -843,7 +903,7 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
   primaryButtonArrow: { color: "#FFFFFF", fontSize: 21 },
   laterButton: {
-    minHeight: 38,
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
   },
