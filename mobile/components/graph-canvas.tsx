@@ -4,14 +4,14 @@ import type { LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
-import { concepts as seededConcepts, connections as seededConnections } from "../lib/knowledge-data";
 import type { Concept, Connection } from "../lib/knowledge-data";
 import { visibleGraphConnections } from "../lib/graph-relationships";
 import { edgeOpacity, edgeStrokeWidth, strengthLabel } from "../lib/relationship-strength-visuals";
-import { graphPositionFor, type GraphLayout } from "../lib/graph-layouts";
+import { graphPositionFor, graphPositionsFor, type GraphLayout } from "../lib/graph-layouts";
 import { evidenceConfidenceColor, evidenceConfidenceLabel } from "../lib/relationship-evidence";
-import { graphNodeLabel, shouldShowGraphNodeLabel, type GraphLabelDensity } from "../lib/graph-node-labels";
+import { graphNodeFullLabel, graphNodeLabel, shouldShowGraphNodeLabel, type GraphLabelDensity } from "../lib/graph-node-labels";
 import { clampGraphCanvasScale, clampGraphCanvasTranslation, nextGraphCanvasViewportForKey } from "../lib/graph-canvas-navigation";
+import { useColors } from "@/hooks/use-colors";
 
 export type SelectedGraphEdge = {
   connection: Connection;
@@ -22,8 +22,9 @@ export type SelectedGraphEdge = {
 type GraphCanvasProps = {
   compact?: boolean;
   wide?: boolean;
-  concepts?: Concept[];
-  connections?: Connection[];
+  /** The caller's real graph. There is no demo fallback: an empty graph renders empty. */
+  concepts: Concept[];
+  connections: Connection[];
   focusId?: string;
   onSelect: (id: string) => void;
   onSelectEdge?: (edge: SelectedGraphEdge) => void;
@@ -34,10 +35,12 @@ type GraphCanvasProps = {
   onZoomChange?: (percent: number) => void;
 };
 
-export function GraphCanvas({ compact = false, wide = false, concepts = seededConcepts, connections = seededConnections, focusId = "adaptive-systems", onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0, onZoomChange }: GraphCanvasProps) {
+export function GraphCanvas({ compact = false, wide = false, concepts, connections, focusId, onSelect, onSelectEdge, layout = "balanced", labelDensity = "all", focusedLabelPreview = false, resetViewToken = 0, onZoomChange }: GraphCanvasProps) {
+  const colors = useColors();
   const canvasHeight = compact ? 250 : wide ? 480 : 330;
   const [canvasWidth, setCanvasWidth] = useState(360);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const scale = useSharedValue(1);
   const translationX = useSharedValue(0);
   const translationY = useSharedValue(0);
@@ -45,9 +48,9 @@ export function GraphCanvas({ compact = false, wide = false, concepts = seededCo
   const panStartX = useSharedValue(0);
   const panStartY = useSharedValue(0);
   const lastReportedZoom = useSharedValue(100);
-  const visibleConcepts = useMemo(() => compact ? concepts.filter((concept) => concept.id !== "donella-meadows") : concepts, [compact, concepts]);
+  const visibleConcepts = concepts;
   const visibleConnections = useMemo(() => visibleGraphConnections(concepts, connections, compact), [compact, concepts, connections]);
-  const positions = useMemo(() => new Map(visibleConcepts.map((concept, index) => [concept.id, graphPositionFor(concept.id, index, visibleConcepts.length, layout)])), [visibleConcepts, layout]);
+  const positions = useMemo(() => graphPositionsFor(visibleConcepts, visibleConnections, layout), [visibleConcepts, visibleConnections, layout]);
   const onLayout = (event: LayoutChangeEvent) => setCanvasWidth(event.nativeEvent.layout.width || 360);
   const reportZoomLevel = useCallback((percent: number) => onZoomChange?.(percent), [onZoomChange]);
   const reportZoomFromWorklet = (nextScale: number) => {
@@ -129,9 +132,14 @@ export function GraphCanvas({ compact = false, wide = false, concepts = seededCo
     const target = concepts.find((concept) => concept.id === connection.targetId);
     if (source && target) onSelectEdge?.({ connection, source, target });
   };
+  const selectNode = (id: string) => {
+    setSelectedNodeId(id);
+    onSelect(id);
+  };
+  const selectedConcept = selectedNodeId ? visibleConcepts.find((concept) => concept.id === selectedNodeId) : undefined;
 
   return (
-    <View {...webKeyboardProps} accessible={!compact} accessibilityLabel={compact ? undefined : "Interactive graph canvas. Pinch to zoom, drag to pan, double-tap to reset. On web, focus this canvas and use arrow keys, plus, minus, or zero."} onLayout={onLayout} style={[styles.canvas, { height: canvasHeight }, compact && styles.compactCanvas]}>
+    <View {...webKeyboardProps} accessible={!compact} accessibilityLabel={compact ? undefined : "Interactive graph canvas. Pinch to zoom, drag to pan, double-tap to reset. On web, focus this canvas and use arrow keys, plus, minus, or zero."} onLayout={onLayout} style={[styles.canvas, { height: canvasHeight, backgroundColor: colors.surface }, compact && styles.compactCanvas]}>
       <GestureDetector gesture={navigationGesture}>
         <Animated.View style={[styles.scene, panSceneStyle]}>
           <Animated.View style={[styles.scene, zoomSceneStyle]}>
@@ -154,19 +162,22 @@ export function GraphCanvas({ compact = false, wide = false, concepts = seededCo
       {visibleConcepts.map((concept, index) => {
         const position = positions.get(concept.id) ?? graphPositionFor(concept.id, index, visibleConcepts.length, layout);
         const featured = concept.id === focusId;
+        const selected = concept.id === selectedNodeId;
+        const showFullTitle = featured || selected;
         const nodeSize = (featured ? 110 : 72) * (compact ? 0.82 : 1);
-        return <GraphNode key={concept.id} label={graphNodeLabel(concept.title, compact)} showLabel={shouldShowGraphNodeLabel(labelDensity, index, featured, focusedLabelPreview)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => onSelect(concept.id)} featured={featured} />;
+        return <GraphNode key={concept.id} label={showFullTitle ? graphNodeFullLabel(concept.title) : graphNodeLabel(concept.title, compact)} fullTitle={graphNodeFullLabel(concept.title)} showLabel={shouldShowGraphNodeLabel(labelDensity, index, featured, focusedLabelPreview)} color={concept.color} compact={compact} style={{ width: compact ? 94 : 126, left: position.x * canvasWidth - (compact ? 47 : 63), top: position.y * canvasHeight - nodeSize / 2 }} nodeStyle={{ width: nodeSize, height: nodeSize, borderRadius: nodeSize / 2 }} onPress={() => selectNode(concept.id)} featured={featured} expandedLabel={showFullTitle} />;
       })}
-      {!compact && <View style={styles.legend}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={styles.legendText}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
+      {!compact && <View style={[styles.legend, { backgroundColor: colors.background }]}><View style={styles.legendLines}><View style={[styles.legendLine, styles.legendLineLight]} /><View style={[styles.legendLine, styles.legendLineStrong]} /></View><Text style={[styles.legendText, { color: colors.muted }]}>{visibleConnections.length} links · thickness = strength · color = evidence · tap for detail</Text></View>}
           </Animated.View>
         </Animated.View>
       </GestureDetector>
+      {!compact && selectedConcept ? <View style={[styles.selectedTitle, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.selectedTitleText, { color: colors.text }]} numberOfLines={3}>{graphNodeFullLabel(selectedConcept.title)}</Text></View> : null}
     </View>
   );
 }
 
-function GraphNode({ label, showLabel, color, style, nodeStyle, compact = false, featured = false, onPress }: { label: string; showLabel: boolean; color: string; style: object; nodeStyle: object; compact?: boolean; featured?: boolean; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={`Open ${label}`} onPress={onPress} style={({ pressed }) => [styles.nodeWrap, style, pressed && styles.nodePressed]}><View style={[styles.node, featured && styles.featuredNode, { backgroundColor: color, shadowColor: color }, nodeStyle]}><View style={styles.nodeCore} /></View>{showLabel ? <Text numberOfLines={2} style={[styles.nodeLabel, compact && styles.compactNodeLabel, featured && styles.featuredLabel]}>{label}</Text> : null}</Pressable>;
+function GraphNode({ label, showLabel, color, style, nodeStyle, compact = false, featured = false, fullTitle, expandedLabel = false, onPress }: { label: string; showLabel: boolean; color: string; style: object; nodeStyle: object; compact?: boolean; featured?: boolean; fullTitle: string; expandedLabel?: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Open ${fullTitle}`} onPress={onPress} style={({ pressed }) => [styles.nodeWrap, style, pressed && styles.nodePressed]}><View style={[styles.node, featured && styles.featuredNode, { backgroundColor: color, shadowColor: color }, nodeStyle]}><View style={styles.nodeCore} /></View>{showLabel ? <Text numberOfLines={expandedLabel ? 4 : 2} style={[styles.nodeLabel, compact && styles.compactNodeLabel, featured && styles.featuredLabel]}>{label}</Text> : null}</Pressable>;
 }
 
 const styles = StyleSheet.create({
@@ -183,13 +194,15 @@ const styles = StyleSheet.create({
   nodeCore: { width: 10, height: 10, borderRadius: 5, backgroundColor: "rgba(8,16,29,0.66)" },
   featuredNode: { borderWidth: 2, borderColor: "rgba(255,255,255,0.35)" },
   nodePressed: { opacity: 0.78, transform: [{ scale: 0.96 }] },
-  nodeLabel: { minHeight: 30, marginTop: 5, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, overflow: "hidden", color: "#ECF2FB", backgroundColor: "rgba(10,16,31,0.9)", textAlign: "center", fontSize: 10, fontWeight: "800", lineHeight: 13 },
-  compactNodeLabel: { minHeight: 25, marginTop: 4, paddingHorizontal: 4, paddingVertical: 2, fontSize: 8.5, lineHeight: 11 },
-  featuredLabel: { color: "#FFFFFF", backgroundColor: "rgba(42,37,96,0.94)", fontSize: 11, lineHeight: 14 },
+  nodeLabel: { minHeight: 30, marginTop: 5, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, overflow: "hidden", color: "#ECF2FB", backgroundColor: "rgba(10,16,31,0.9)", textAlign: "center", fontSize: 12, fontWeight: "800", lineHeight: 16 },
+  compactNodeLabel: { minHeight: 25, marginTop: 4, paddingHorizontal: 4, paddingVertical: 2, fontSize: 12, lineHeight: 15 },
+  featuredLabel: { color: "#FFFFFF", backgroundColor: "rgba(42,37,96,0.94)", fontSize: 12, lineHeight: 16 },
   legend: { position: "absolute", left: 15, bottom: 13, flexDirection: "row", alignItems: "center", borderRadius: 11, paddingHorizontal: 9, paddingVertical: 6, backgroundColor: "rgba(11,16,32,0.84)" },
   legendLines: { width: 17, height: 13, justifyContent: "space-around", marginRight: 6 },
   legendLine: { width: 14, borderRadius: 3, backgroundColor: "#48D6E8" },
   legendLineLight: { height: 1.5, opacity: 0.58 },
   legendLineStrong: { height: 4, opacity: 0.98 },
-  legendText: { color: "#A5B2CB", fontSize: 10, fontWeight: "700" },
+  legendText: { color: "#A5B2CB", fontSize: 12, fontWeight: "700" },
+  selectedTitle: { position: "absolute", left: 12, right: 12, top: 12, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "#151C2E" },
+  selectedTitleText: { color: "#F3F6FC", fontSize: 14, fontWeight: "800", lineHeight: 19 },
 });

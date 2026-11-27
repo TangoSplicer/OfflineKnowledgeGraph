@@ -8,6 +8,7 @@ import { createBackupPreview } from "@/lib/backup-preview";
 import { mergeSelectedGraphImport, selectBackupGraph } from "@/lib/selective-import";
 import { parseGraphBackup, type GraphBackup } from "@/lib/relationship-backup";
 import { useRelationshipStore } from "@/lib/relationship-store";
+import { savePreRestoreSnapshot } from "@/lib/pre-restore-snapshot";
 
 export default function RestoreBackupScreen() {
   const { concepts, connections, isReady, replaceGraph } = useRelationshipStore();
@@ -37,9 +38,10 @@ export default function RestoreBackupScreen() {
     return next;
   });
 
-  const importSelected = () => {
+  const importSelected = async () => {
     if (!pendingBackup || !selectedIds.size) return;
     const merged = mergeSelectedGraphImport(concepts, connections, pendingBackup, selectedIds);
+    await savePreRestoreSnapshot(concepts, connections);
     replaceGraph(merged.concepts, merged.connections);
     router.replace("/(tabs)");
   };

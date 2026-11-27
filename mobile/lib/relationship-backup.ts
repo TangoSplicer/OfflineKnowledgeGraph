@@ -1,7 +1,6 @@
 import {
   clampRelationshipStrength,
   clampEvidenceConfidence,
-  concepts as seededConcepts,
   isConceptKind,
   isRelationshipType,
   normalizeSourceUrls,
@@ -107,6 +106,6 @@ export function parseGraphBackup(serialized: string): GraphBackup {
 }
 
 // Kept as a compatibility alias for callers that used the previous utility name.
-export const createRelationshipBackup = (connections: Connection[], exportedAt?: string) => createGraphBackup(seededConcepts, connections, exportedAt);
-export const serializeRelationshipBackup = (connections: Connection[]) => serializeGraphBackup(seededConcepts, connections);
+// The old createRelationshipBackup / serializeRelationshipBackup helpers were
+// removed: they silently filled backups with the seeded demo concepts.
 export const parseRelationshipBackup = parseGraphBackup;
