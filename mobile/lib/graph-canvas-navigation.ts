@@ -1,5 +1,5 @@
 export const GRAPH_CANVAS_MIN_SCALE = 1;
-export const GRAPH_CANVAS_MAX_SCALE = 2.6;
+export const GRAPH_CANVAS_MAX_SCALE = 4.5;
 export const GRAPH_CANVAS_KEYBOARD_PAN_STEP = 36;
 export const GRAPH_CANVAS_KEYBOARD_ZOOM_STEP = 0.2;
 

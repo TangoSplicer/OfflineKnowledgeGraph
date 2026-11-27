@@ -28,3 +28,12 @@ export function graphNodeLabel(title: string, compact = false): string {
   if (normalized.length <= maximum) return normalized;
   return `${normalized.slice(0, maximum - 1).trimEnd()}…`;
 }
+
+/**
+ * The full, untruncated title. Canvas labels still truncate so nodes stay
+ * legible, but a selected or featured node shows this instead — truncation
+ * must never be the only place a title appears.
+ */
+export function graphNodeFullLabel(title: string): string {
+  return title.replace(/\s+/g, " ").trim();
+}

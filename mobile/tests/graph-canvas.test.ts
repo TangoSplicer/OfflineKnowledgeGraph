@@ -41,7 +41,7 @@ describe("live graph canvas data", () => {
 
   it("keeps pinch zoom and pan within a predictable, resettable canvas viewport", () => {
     expect(clampGraphCanvasScale(0.4)).toBe(1);
-    expect(clampGraphCanvasScale(5)).toBe(2.6);
+    expect(clampGraphCanvasScale(5)).toBe(4.5);
     expect(graphCanvasTranslationBounds(2, 360, 330)).toEqual({ x: 180, y: 165 });
     expect(clampGraphCanvasTranslation({ x: 900, y: -900 }, 2, 360, 330)).toEqual({ x: 180, y: -165 });
     expect(clampGraphCanvasTranslation({ x: 40, y: -40 }, 1, 360, 330)).toEqual({ x: 0, y: 0 });
