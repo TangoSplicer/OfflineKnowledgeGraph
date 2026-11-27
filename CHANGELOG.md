@@ -2,6 +2,18 @@
 
 Offline Knowledge Graph is maintained as a local-first knowledge-graph application with a Rust core, language bridges, and an Expo/React Native mobile client. This changelog groups the most meaningful published changes by capability area. It is a product history rather than a promise of semantic-version compatibility.
 
+## Usability review fixes (unreleased, branch `fix/usability-review-2026-11-27`)
+
+Fixes from a usability review of the mobile client, all on the current Expo SDK 54 / React Native 0.81 stack (no SDK upgrade):
+
+- Capture now really saves: "Save concept locally" writes through the relationship store and only reports success after the write. Search now searches your own concepts (including archived, marked as such) instead of the five sample concepts.
+- Home no longer shows the demo graph on an empty workspace, and the graph canvas no longer falls back to seeded sample data; concept screens show a proper not-found state for unknown ids instead of a sample concept.
+- Graph layout is no longer hardcoded for the five demo nodes: a deterministic force-directed layout with collision-aware spacing replaces the demo position table, zoom now goes to 4.5x, and the focused node shows its full title.
+- Explore opens as a clean graph with filters collapsed behind one Filter button; advanced controls live in a secondary panel, and empty states offer a next step.
+- The first-concept and first-relationship wizards are merged into one honest 3-step flow with a single "Skip" wording.
+- Backup and restore are unified on one screen: protected ZIP is the recommended path, plain JSON is explicitly advanced/unprotected, replace/clear need a typed confirmation, and a pre-restore snapshot is saved automatically so a bad restore can be undone.
+- Library is grouped by task, a persistent "+" tab opens capture, accessibility labels and 44pt touch targets were added across the touched screens, small text was raised to 13-14pt, and the touched screens use theme tokens. Note: the light palette in `theme.config.js` still mirrors the dark palette, so light mode remains effectively dark until light values are designed.
+
 ## Current: Explore navigation and local record controls
 
 The Explore canvas now supports **pinch-to-zoom** between 1× and 2.6×, bounded one-finger panning, double-tap reset, a visible zoom-level indicator, and a Reset view action. In the web build, focus the canvas to use arrow keys for panning, `+` or `−` for zoom, and `0` to recenter. These controls preserve node and relationship taps when the user is not dragging.
