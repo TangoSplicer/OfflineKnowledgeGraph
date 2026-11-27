@@ -9,6 +9,7 @@ import { biometricPromptFor } from "@/lib/biometric-gate-state";
 import { decryptProtectedExportGraph, readProtectedExportRecoveryHint, validateExportPassphrase } from "@/lib/home-local-export";
 import type { GraphBackup } from "@/lib/relationship-backup";
 import { useRelationshipStore } from "@/lib/relationship-store";
+import { savePreRestoreSnapshot } from "@/lib/pre-restore-snapshot";
 
 export default function RestoreProtectedExportScreen() {
   const { concepts, connections, isReady, replaceGraph } = useRelationshipStore();
@@ -46,12 +47,14 @@ export default function RestoreProtectedExportScreen() {
     if (!pendingBackup) return;
     const gate = await confirmSensitiveSyncAction(biometricPromptFor("protected-restore"));
     if (!gate.allowed) { setStatus(gate.message); return; }
+    // Snapshot first: a bad restore can be undone from Backup & restore.
+    await savePreRestoreSnapshot(concepts, connections);
     replaceGraph(pendingBackup.concepts, pendingBackup.connections);
     setPassphrase("");
     router.replace("/(tabs)/library");
   };
 
-  return <View style={styles.screen}><Stack.Screen options={{ headerShown: false }} /><View style={styles.header}><Pressable onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed && styles.pressed]}><Text style={styles.backText}>‹</Text></Pressable><Text style={styles.headerTitle}>Restore protected export</Text><View style={styles.headerSpace} /></View><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}><Text style={styles.eyebrow}>LOCAL RECOVERY</Text><Text style={styles.title}>Open a protected graph export.</Text><Text style={styles.description}>The archive is decrypted only on this device. Your passphrase is never stored or transmitted.</Text><View style={styles.inputCard}><Text style={styles.inputLabel}>1. CHOOSE PROTECTED ZIP</Text><Pressable disabled={!isReady} onPress={() => void chooseProtectedExport()} style={({ pressed }) => [styles.primary, pressed && styles.pressed, !isReady && styles.disabled]}><Text style={styles.primaryText}>{selectedBundle ? "Choose a different protected ZIP" : "Choose protected ZIP"}</Text><Text style={styles.arrow}>→</Text></Pressable>{selectedBundle ? <View style={styles.hintCard}><Text style={styles.hintEyebrow}>RECOVERY HINT</Text><Text style={styles.hintText}>{recoveryHint ? recoveryHint : "No recovery hint was saved with this archive."}</Text><Text style={styles.hintGuidance}>This is a non-secret reminder only. It is not the passphrase.</Text></View> : null}<Text style={styles.inputLabel}>2. EXPORT PASSPHRASE</Text><TextInput value={passphrase} onChangeText={setPassphrase} secureTextEntry autoCapitalize="none" autoCorrect={false} placeholder="Enter the export passphrase" placeholderTextColor="#718A96" accessibilityLabel="Protected export passphrase" style={styles.input} /><Text style={styles.guidance}>Use the exact passphrase from export. It cannot be recovered if forgotten.</Text><Pressable disabled={!isReady || !selectedBundle} onPress={() => void inspectProtectedExport()} style={({ pressed }) => [styles.primary, pressed && styles.pressed, (!isReady || !selectedBundle) && styles.disabled]}><Text style={styles.primaryText}>Verify protected export</Text><Text style={styles.arrow}>→</Text></Pressable></View>{pendingBackup ? <View style={styles.preview}><Text style={styles.previewEyebrow}>VERIFIED ARCHIVE</Text><Text style={styles.previewTitle}>Ready to restore locally</Text><View style={styles.metrics}><Metric value={`${pendingBackup.concepts.length}`} label="concepts" /><Metric value={`${pendingBackup.connections.length}`} label="links" /><Metric value={new Date(pendingBackup.exportedAt).toLocaleDateString()} label="exported" /></View><Text style={styles.warning}>Restoring replaces this device’s current graph of {concepts.length} concepts and {connections.length} relationships.</Text><Pressable onPress={() => void restoreProtectedExport()} style={({ pressed }) => [styles.restore, pressed && styles.pressed]}><Text style={styles.restoreText}>Confirm and restore</Text><Text style={styles.arrow}>→</Text></Pressable></View> : null}<Text accessibilityLiveRegion="polite" style={styles.status}>{status}</Text></ScrollView></View>;
+  return <View style={styles.screen}><Stack.Screen options={{ headerShown: false }} /><View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} style={({ pressed }) => [styles.back, pressed && styles.pressed]}><Text style={styles.backText}>‹</Text></Pressable><Text style={styles.headerTitle}>Restore protected export</Text><View style={styles.headerSpace} /></View><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}><Text style={styles.eyebrow}>LOCAL RECOVERY</Text><Text style={styles.title}>Open a protected graph export.</Text><Text style={styles.description}>The archive is decrypted only on this device. Your passphrase is never stored or transmitted.</Text><View style={styles.inputCard}><Text style={styles.inputLabel}>1. CHOOSE PROTECTED ZIP</Text><Pressable accessibilityRole="button" accessibilityLabel="Choose a protected ZIP export" disabled={!isReady} onPress={() => void chooseProtectedExport()} style={({ pressed }) => [styles.primary, pressed && styles.pressed, !isReady && styles.disabled]}><Text style={styles.primaryText}>{selectedBundle ? "Choose a different protected ZIP" : "Choose protected ZIP"}</Text><Text style={styles.arrow}>→</Text></Pressable>{selectedBundle ? <View style={styles.hintCard}><Text style={styles.hintEyebrow}>RECOVERY HINT</Text><Text style={styles.hintText}>{recoveryHint ? recoveryHint : "No recovery hint was saved with this archive."}</Text><Text style={styles.hintGuidance}>This is a non-secret reminder only. It is not the passphrase.</Text></View> : null}<Text style={styles.inputLabel}>2. EXPORT PASSPHRASE</Text><TextInput value={passphrase} onChangeText={setPassphrase} secureTextEntry autoCapitalize="none" autoCorrect={false} placeholder="Enter the export passphrase" placeholderTextColor="#718A96" accessibilityLabel="Protected export passphrase" style={styles.input} /><Text style={styles.guidance}>Use the exact passphrase from export. It cannot be recovered if forgotten.</Text><Pressable accessibilityRole="button" accessibilityLabel="Verify protected export" disabled={!isReady || !selectedBundle} onPress={() => void inspectProtectedExport()} style={({ pressed }) => [styles.primary, pressed && styles.pressed, (!isReady || !selectedBundle) && styles.disabled]}><Text style={styles.primaryText}>Verify protected export</Text><Text style={styles.arrow}>→</Text></Pressable></View>{pendingBackup ? <View style={styles.preview}><Text style={styles.previewEyebrow}>VERIFIED ARCHIVE</Text><Text style={styles.previewTitle}>Ready to restore locally</Text><View style={styles.metrics}><Metric value={`${pendingBackup.concepts.length}`} label="concepts" /><Metric value={`${pendingBackup.connections.length}`} label="links" /><Metric value={new Date(pendingBackup.exportedAt).toLocaleDateString()} label="exported" /></View><Text style={styles.warning}>Restoring replaces this device’s current graph of {concepts.length} concepts and {connections.length} relationships.</Text><Pressable accessibilityRole="button" accessibilityLabel="Confirm and restore this protected export" onPress={() => void restoreProtectedExport()} style={({ pressed }) => [styles.restore, pressed && styles.pressed]}><Text style={styles.restoreText}>Confirm and restore</Text><Text style={styles.arrow}>→</Text></Pressable></View> : null}<Text accessibilityLiveRegion="polite" style={styles.status}>{status}</Text></ScrollView></View>;
 }
 
 function Metric({ value, label }: { value: string; label: string }) { return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>; }
@@ -69,14 +72,14 @@ const styles = StyleSheet.create({
   description: { color: "#A8B5CB", fontSize: 14, lineHeight: 21, marginTop: 10 },
   inputCard: { borderRadius: 18, padding: 15, marginTop: 23, backgroundColor: "#142A38", borderWidth: 1, borderColor: "#3B7283" },
   inputLabel: { color: "#85DFE4", fontSize: 9, letterSpacing: 1, fontWeight: "900" },
-  input: { minHeight: 44, borderRadius: 11, paddingHorizontal: 12, marginTop: 9, color: "#F0FEFF", backgroundColor: "#0D222D", borderWidth: 1, borderColor: "#3F7987", fontSize: 12 },
+  input: { minHeight: 48, borderRadius: 11, paddingHorizontal: 12, marginTop: 9, color: "#F0FEFF", backgroundColor: "#0D222D", borderWidth: 1, borderColor: "#3F7987", fontSize: 12 },
   hintCard: { borderRadius: 11, padding: 11, marginTop: 10, backgroundColor: "#183844", borderWidth: 1, borderColor: "#40798A" },
   hintEyebrow: { color: "#86E4E8", fontSize: 9, letterSpacing: 1, fontWeight: "900" },
   hintText: { color: "#E0F7F8", fontSize: 12, lineHeight: 17, fontWeight: "800", marginTop: 5 },
-  hintGuidance: { color: "#A4C9D0", fontSize: 10, lineHeight: 14, marginTop: 5 },
-  guidance: { color: "#A4C9D0", fontSize: 10, lineHeight: 15, marginTop: 8 },
+  hintGuidance: { color: "#A4C9D0", fontSize: 12, lineHeight: 14, marginTop: 5 },
+  guidance: { color: "#A4C9D0", fontSize: 12, lineHeight: 15, marginTop: 8 },
   primary: { minHeight: 47, borderRadius: 13, paddingHorizontal: 14, marginTop: 13, backgroundColor: "#347F8B", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  primaryText: { color: "#F0FEFF", fontSize: 12, fontWeight: "900" },
+  primaryText: { color: "#F0FEFF", fontSize: 13, fontWeight: "900" },
   arrow: { color: "#F0FEFF", fontSize: 19, fontWeight: "900" },
   preview: { borderRadius: 18, padding: 15, marginTop: 17, backgroundColor: "#25203C", borderWidth: 1, borderColor: "#665B9E" },
   previewEyebrow: { color: "#C3BCFF", fontSize: 9, letterSpacing: 1, fontWeight: "900" },
@@ -85,10 +88,10 @@ const styles = StyleSheet.create({
   metric: { flex: 1, alignItems: "center" },
   metricValue: { color: "#F3F0FF", fontSize: 13, fontWeight: "900" },
   metricLabel: { color: "#AAA5D2", fontSize: 9, marginTop: 3, fontWeight: "800" },
-  warning: { color: "#C9C3E7", fontSize: 10, lineHeight: 15, marginTop: 12 },
+  warning: { color: "#C9C3E7", fontSize: 12, lineHeight: 15, marginTop: 12 },
   restore: { minHeight: 46, borderRadius: 13, paddingHorizontal: 14, marginTop: 13, backgroundColor: "#6258A8", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  restoreText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
-  status: { color: "#9AB2C1", fontSize: 11, lineHeight: 17, marginTop: 17 },
+  restoreText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  status: { color: "#9AB2C1", fontSize: 13, lineHeight: 17, marginTop: 17 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
 });
